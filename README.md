@@ -25,11 +25,7 @@ A complete description of the models can be found in the following paper:
 
 ## Run a simulation
 
-* Download and install current versions of GetDP and Gmsh (see http://getdp.info/ and http://gmsh.info/ for full instructions). Below, it is assumed that these programs can be launched from the command line using `getdp` and `gmsh`. With Unix or Mac OS, you can create aliases in the `.bash_profile` file:
-```
-alias getdp='/Applications/getdp'
-alias gmsh='/Applications/Gmsh.app/Contents/MacOS/gmsh'
-```
+* Download and install current versions of GetDP and Gmsh (see http://getdp.info/ and http://gmsh.info/ for full instructions). Below, it is assumed that these programs can be launched from the command line using `getdp` and `gmsh` (with aliases).
 
 * Clone or download this repository.
 
