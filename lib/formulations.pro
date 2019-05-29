@@ -158,9 +158,12 @@ FunctionSpace {
         BasisFunction {
             { Name psin; NameOfCoef an; Function BF_PerpendicularEdge;
                 Support Omega_a_AndBnd; Entity NodesOf[All]; }
+            { Name psin2; NameOfCoef an2; Function BF_PerpendicularEdge_2E;
+                Support Omega_a_AndBnd; Entity EdgesOf[BndOmega_ha]; }
         }
         Constraint {
             { NameOfCoef an; EntityType NodesOf; NameOfConstraint a; }
+            { NameOfCoef an2; EntityType EdgesOf; NameOfConstraint a2; }
         }
     }
     //  2: In 3D or 2D with perpendicular b

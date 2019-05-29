@@ -179,6 +179,11 @@ Constraint {
             {Region Gamma_e ; Value -X[]^2 * mu0 / 2.0 ; TimeFunction hsVal[] ;}
         }
     }
+    { Name a2 ;
+        Case {
+            {Region Gamma_e ; Value 0.0 ;} // Second-order hierarchical elements
+        }
+    }
     { Name phi ;
         Case {
             {Region SurfOut ; Value XYZ[]*directionApplied[] ; TimeFunction hsVal[] ;}
