@@ -9,7 +9,7 @@ DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
-
+DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 // Shells definition
 Point(100) = {0, 0, 0, LcCyl};
 Point(1) = {0, -R_air, 0, LcAir};
@@ -88,23 +88,22 @@ Plane Surface(56) = {65};
 Line Loop(33) = {8765, 13, 14, 15}; // Cylinder
 Plane Surface(43) = {33};
 
-//Transfinite Line{8765, 14, 103} = 5;
+If(transfiniteQuadrangular)
+    Transfinite Surface(52);
+    Recombine Surface(52);
+    Transfinite Surface(53);
+    Recombine Surface(53);
+    Transfinite Surface(54);
+    Recombine Surface(54);
+    Transfinite Surface(55);
+    Recombine Surface(55);
+    Transfinite Surface(56);
+    Recombine Surface(56);
 
-/*
-Transfinite Surface(52);
-Recombine Surface(52);
-Transfinite Surface(53);
-Recombine Surface(53);
-Transfinite Surface(54);
-Recombine Surface(54);
-Transfinite Surface(55);
-Recombine Surface(55);
-Transfinite Surface(56);
-Recombine Surface(56);
+    Transfinite Surface(43);
+    Recombine Surface(43);
+EndIf
 
-Transfinite Surface(43);
-Recombine Surface(43);
-*/
 Physical Surface("Air", AIR) = {41, 52, 53, 54, 55, 56};
 Physical Surface("Spherical shell", AIR_OUT) = {40};
 Physical Surface("Cylinder", MATERIAL) = {43};
@@ -118,7 +117,7 @@ Physical Line("Positive side of bnds", BND_MATERIAL_SIDE) = {15};
 
 
 // Some colors
-Color SkyBlue   {Surface{40, 41, 42};} // Air + Air inf
+Color SkyBlue {Surface{40, 41, 52, 53, 54, 55, 56};} // Air + Air inf
 Color Green {Surface{43};} // Cylinder
 
 

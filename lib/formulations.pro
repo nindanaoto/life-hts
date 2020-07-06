@@ -159,7 +159,7 @@ FunctionSpace {
             { Name psin; NameOfCoef an; Function BF_PerpendicularEdge;
                 Support Omega_a_AndBnd; Entity NodesOf[All]; }
             { Name psin2; NameOfCoef an2; Function BF_PerpendicularEdge_2E;
-                Support Omega_a_AndBnd; Entity EdgesOf[BndOmega_ha]; }
+                Support Omega_a_AndBnd; Entity EdgesOf[BndOmega_ha]; } // Second order for stability of the coupling
         }
         Constraint {
             { NameOfCoef an; EntityType NodesOf; NameOfConstraint a; }
@@ -482,8 +482,10 @@ PostProcessing {
                 // TBC...
             ElseIf(Dim == 2)
                 // Not axisym, so surface integral to give (total) magnetization per unit length.
-                // Here, the average is computed. ATTENTION: Factor 2 is introduced
+                // Here, the average is computed. ATTENTION: Factor 2 is not introduced
                 { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[] /\ {d h} / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
             ElseIf(Dim == 3)
                 { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[] /\ {d h} / GetVolume[] ] ;
@@ -551,9 +553,12 @@ PostProcessing {
                     In OmegaC; Integration Int; Jacobian Vol; } } }
             Else
                 // Not axisym, so surface integral to give (total) magnetization per unit length.
-                // Here, the average is computed. ATTENTION: Factor 2 is not introduced
+                // Here, the average is computed. ATTENTION: Factor 2 (for end junctions) is not introduced
                 { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[]
                     /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ] / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0*0.5 * Vector[0,1,0] * (XYZ[]
+                    /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (SurfaceArea[]) ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
             EndIf
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
@@ -610,8 +615,17 @@ PostProcessing {
                 In OmegaC; Jacobian Vol; } } }
             { Name norm_j; Value{ Local{ [ Norm[{d h}] ] ;
                 In OmegaC; Jacobian Vol; } } }
-            { Name m_avg; Value{ Integral{ [ - Pi * X[] * CompZ[{d h}] / (Pi * SurfaceArea[]) ] ;
-                In OmegaC; Integration Int; Jacobian Vol; } } } // Jacobian is in "Vol"
+            If(Axisymmetry == 1)
+                { Name m_avg; Value{ Integral{ [ 2*Pi * 0.5 * XYZ[] /\ {d h} / (Pi*SurfaceArea[]*W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } } // Jacobian is in "Vol"
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0*2*Pi * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (Pi*SurfaceArea[]*W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+            Else
+                { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[] /\ {d h} / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+            EndIf
             { Name b_avg; Value{ Integral{ [ 2*Pi*mu[{h}] * {h} / (SurfaceArea[]) ] ;
                 In OmegaC; Integration Int; Jacobian Vol; } } }
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
