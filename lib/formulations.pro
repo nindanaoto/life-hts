@@ -474,8 +474,10 @@ PostProcessing {
             { Name norm_j; Value{ Local{ [ Norm[{d h}] ] ;
                 In OmegaC; Jacobian Vol; } } }
             If(Axisymmetry == 1)
-                //{ Name m_avg; Value{ Integral{ [ 2*Pi * 0.5 * XYZ[] /\ {d h} / (Pi*SurfaceArea[]*W/2) ] ;
-                //    In OmegaC; Integration Int; Jacobian Vol; } } } // Jacobian is in "Vol"
+                { Name m_avg; Value{ Integral{ [ 2*Pi * 0.5 * XYZ[] /\ {d h} / (Pi*SurfaceArea[]*W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } } // Jacobian is in "Vol"
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0*2*Pi * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (Pi*SurfaceArea[]*W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
             ElseIf(Dim == 1)
                 // TBC...
             ElseIf(Dim == 2)
@@ -488,6 +490,8 @@ PostProcessing {
                     In OmegaC; Integration Int; Jacobian Vol; } } }
             EndIf
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
+            { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
+            { Name time; Value{ Term { [ $Time ]; In Omega; } } }
             { Name power;
                 Value{
                     Integral{ [ (mu[{h}]*{h} - mu[{h}[1]]*{h}[1]) / $DTime * {h} ] ;
@@ -539,9 +543,12 @@ PostProcessing {
             { Name U; Value{ Term{ [ {U} ] ;
                 In OmegaC; } } }
             If(Axisymmetry == 1)
-                //{ Name m_avg; Value{ Integral{ [ 2*Pi * 0.5 * XYZ[]
-                //    /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ] / (Pi * SurfaceArea[] * W/2) ] ;
-                //    In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg; Value{ Integral{ [ 2*Pi * 0.5 * XYZ[]
+                    /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ] / (Pi * SurfaceArea[] * W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_y_tesla; Value{ Integral{ [ mu0*2*Pi * 0.5 * Vector[0,1,0] * (XYZ[]
+                    /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (Pi * SurfaceArea[] * W/2) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
             Else
                 // Not axisym, so surface integral to give (total) magnetization per unit length.
                 // Here, the average is computed. ATTENTION: Factor 2 is not introduced
@@ -550,6 +557,8 @@ PostProcessing {
                     In OmegaC; Integration Int; Jacobian Vol; } } }
             EndIf
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
+            { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
+            { Name time; Value{ Term { [ $Time ]; In Omega; } } }
             { Name power;
                 Value{
                     Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[{d a}] * {d a} ] ;
@@ -606,6 +615,8 @@ PostProcessing {
             { Name b_avg; Value{ Integral{ [ 2*Pi*mu[{h}] * {h} / (SurfaceArea[]) ] ;
                 In OmegaC; Integration Int; Jacobian Vol; } } }
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
+            { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
+            { Name time; Value{ Term { [ $Time ]; In Omega; } } }
             { Name power;
                 Value{
                     Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[{d a}] * {d a} ] ;

@@ -305,6 +305,12 @@ Resolution {
                             Print[{$TimeStep}, Format "%g"];
                             PostOperation[saveSeparately];
                         EndIf
+                        If(realTimeSolution)
+                            PostOperation[MagDyn];
+                        EndIf
+                        If(realTimeInfo)
+                            PostOperation[Info];
+                        EndIf
                         Print[{$Time, $indicAir, $indicFerro, $indicSuper, $indicDissSuper, $indicDissLin, $Voltage, $Current},
                             Format "%g %14.12e %14.12e %14.12e %14.12e %14.12e %14.12e %14.12e", File outputPower];
                         Print[{$Time, $indicSuper}, Format "Time %g saved."];
@@ -372,6 +378,21 @@ PostOperation {
                 Print[ U, OnRegion OmegaC, Format Table, StoreInVariable $Voltage, File > "res/dummy.txt" ];
                 Print[ I, OnRegion OmegaC, Format Table, StoreInVariable $Current, File > "res/dummy.txt" ];
             EndIf
+        }
+    }
+    // Runtime output for graph plot
+    { Name Info;
+        If(formulation == h_formulation)
+            NameOfPostProcessing MagDyn_htot ;
+        ElseIf(formulation == a_formulation)
+            NameOfPostProcessing MagDyn_avtot ;
+        ElseIf(formulation == coupled_formulation)
+            NameOfPostProcessing MagDyn_coupled ;
+        EndIf
+        Operation{
+            Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
+            Print[ bsVal[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied field [T]"] ;
+            Print[ m_avg_y_tesla[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Avg. magnetization [T]"] ;
         }
     }
     // Save the steps separately (if needed)

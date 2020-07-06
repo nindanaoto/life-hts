@@ -72,7 +72,7 @@ Plane Surface(41) = {31};
 Line Loop(35) = {50, 51, 52, 53, -54, -31, -30, -2, -1}; // Air refined
 Plane Surface(45) = {35};
 Line Loop(32) = {1, 2, 3, 8765}; // Lower cylinder
-Plane Surface(42) = {-32};
+Plane Surface(42) = {32};
 Line Loop(33) = {-3, 30, 31, -32}; // Upper cylinder
 Plane Surface(43) = {33};
 //Transfinite Surface(42);

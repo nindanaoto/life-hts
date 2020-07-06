@@ -4,10 +4,11 @@ Include "cylinder_data.pro";
 // Interactive settings
 R = W/2; // Radius
 // Mesh size
+DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
-DefineConstant [LcLayer = meshMult*0.0003]; // Mesh size in the region close to the cylinder [m]
-DefineConstant [LcAir = meshMult*0.003]; // Mesh size in air shell [m]
-DefineConstant [LcInf = meshMult*0.003]; // Mesh size in external air shell [m]
+DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
+DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
+DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 
 // Shells definition
 Point(100) = {0, 0, 0, LcCyl};

@@ -1,6 +1,19 @@
 Include "cylinder_data.pro";
 
 Group {
+    // Preset choice of formulation
+    DefineConstant[preset = {1, Highlight "Blue",
+      Choices{
+        1="h-formulation",
+        2="a-formulation (large steps)",
+        3="a-formulation (small steps)"},
+      Name "Input/5Method/0Preset formulation" },
+      expMode = {0, Choices{0,1}, Name "Input/5Method/1Allow changes?"}];
+    // Output choice
+    DefineConstant[ realTimeSolution = 0 ];
+    DefineConstant[ realTimeInfo = 1 ];
+
+
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
     Dim = 2;
@@ -22,9 +35,9 @@ Group {
 
     // ------- WEAK FORMULATION -------
     // Choice of the formulation
-    DefineConstant [formulation = h_formulation];
+    DefineConstant [formulation = (preset==1) ? h_formulation : a_formulation];
     // Iterative methods. Always N-R for the coupled formulation (whatever the values below)
-    DefineConstant [Flag_NR_Super = 1]; // 1: N-R, 0: Picard
+    DefineConstant [Flag_NR_Super = (preset==1) ? 1 : 0]; // 1: N-R, 0: Picard
     DefineConstant [Flag_NR_Ferro = 1]; // 1: N-R, 0: Picard
 
     // ------- Definition of the physical regions -------
@@ -88,8 +101,8 @@ Function{
     // ------- PARAMETERS -------
     // Superconductor parameters
     DefineConstant [ec = 1e-4]; // Critical electric field [V/m]
-    DefineConstant [jc = 3e8]; // Critical current density [A/m2]
-    DefineConstant [n = 20]; // Superconductor exponent (n) value [-]
+    DefineConstant [jc = {3e8, Name "Input/3Material Properties/2jc (Am⁻²)"}]; // Critical current density [A/m2]
+    DefineConstant [n = {20, Name "Input/3Material Properties/1n (-)"}]; // Superconductor exponent (n) value [-]
     DefineConstant [epsSigma = 1e-8]; // Importance of the linear part for a-formulation [-]
     DefineConstant [epsSigma2 = 1e-15]; // To prevent division by 0 in sigma [-]
     // Ferromagnetic material parameters
@@ -99,22 +112,28 @@ Function{
     DefineConstant [epsNu = 1e-10]; // To prevent division by 0 in nu [T]
     // Excitation - Source field or imposed current intensty
     // 0: sine, 1: triangle, 2: up-down-pause, 3: step, 4: up-pause-down
-    DefineConstant [Flag_Source = 4];
+    DefineConstant [Flag_Source = {1, Highlight "yellow", Choices{
+        0="Sine",
+        1="Triangle",
+        4="Up-pause-down"}, Name "Input/4Source/0Source field type" }];
     DefineConstant [Imax = jc*H_cylinder*W/2]; // Maximum imposed current intensity [A]
-    DefineConstant [f = 50]; // Frequency of imposed current intensity [Hz]
-    DefineConstant [bmax = 1]; // Maximum applied magnetic induction [T]
+    DefineConstant [f = {0.1, Visible (Flag_Source ==0), Name "Input/4Source/1Frequency (Hz)"}]; // Frequency of imposed current intensity [Hz]
+    DefineConstant [bmax = {1, Name "Input/4Source/2Field amplitude (T)"}]; // Maximum applied magnetic induction [T]
+    DefineConstant [partLength = {5, Visible (Flag_Source != 0), Name "Input/4Source/1Ramp duration (s)"}];
     DefineConstant [timeStart = 0]; // Initial time [s]
-    DefineConstant [timeFinal = 15]; // Final time for source definition [s]
-    DefineConstant [timeFinalSimu = 15]; // Final time of simulation [s]
+    DefineConstant [timeFinal = (Flag_Source == 0) ? 5/(4*f) : ((Flag_Source == 1) ? 5*partLength : 3*partLength)]; // Final time for source definition [s]
+    DefineConstant [timeFinalSimu = timeFinal]; // Final time of simulation [s]
     DefineConstant [stepTime = 0.01]; // Initiation of the step [s]
     DefineConstant [stepSharpness = 0.001]; // Duration of the step [s]
 
     // ------- NUMERICAL PARAMETERS -------
-    DefineConstant [dt = meshMult*timeFinal/300]; // Time step (initial if adaptive)[s]
+    DefineConstant [dt = {(preset==1 || preset == 3) ? meshMult*timeFinal/300 : timeFinal/15, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Time step (s)"}]; // Time step (initial if adaptive)[s]
     DefineConstant [adaptive = 1]; // Allow adaptive time step increase (case 0 not implemented yet)
     DefineConstant [dt_max = dt]; // Maximum allowed time step [s]
-    DefineConstant [iter_max = 600]; // Maximum number of nonlinear iterations
-    DefineConstant [extrapolationOrder = 1]; // Extrapolation order
+    DefineConstant [iter_max = {(preset==1) ? 30 : 600, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Max number of iteration (-)"}]; // Maximum number of nonlinear iterations
+    DefineConstant [extrapolationOrder = (preset==1) ? 1 : 2]; // Extrapolation order
     // Use relaxation factors?
     tryrelaxationfactors = 0;
     // Convergence criterion
@@ -122,7 +141,8 @@ Function{
     // 1: absolute/relative residual (do not use)
     // 2: relative increment (do not use either)
     DefineConstant [convergenceCriterion = 0];
-    DefineConstant [tol_energy = 1e-6]; // Relative tolerance on the energy estimates
+    DefineConstant [tol_energy = {(preset == 1) ? 1e-6 : 1e-4, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Relative tolerance (-)"}]; // Relative tolerance on the energy estimates
     DefineConstant [tol_abs = 1e-12]; //Absolute tolerance on nonlinear residual
     DefineConstant [tol_rel = 1e-6]; // Relative tolerance on nonlinear residual
     DefineConstant [tol_incr = 5e-3]; // Relative tolerance on the solution increment
@@ -197,7 +217,7 @@ Include "../lib/formulations.pro";
 Include "../lib/resolution.pro";
 
 PostOperation {
-    { Name MagDyn;
+    { Name MagDyn; LastTimeStepOnly realTimeSolution ;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;
         ElseIf(formulation == a_formulation)
@@ -214,11 +234,12 @@ PostOperation {
                     Print[ ur, OnElementsOf OmegaC , File "res/ur.pos", Name "ur [V/m]" ];
                 EndIf
                 Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [A/m2]" ];
-                Print[ jz, OnElementsOf OmegaC , File "res/jz.pos", Name "j [A/m2]" ];
+                Print[ jz, OnElementsOf OmegaC , File "res/jz.pos", Name "jz [A/m2]" ];
                 Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [V/m]" ];
                 Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [A/m]" ];
                 Print[ b, OnElementsOf Omega , File "res/b.pos", Name "b [T]" ];
             EndIf
+            Print[ m_avg[OmegaC], OnRegion OmegaC, Format TimeTable, File outputMagnetization];
             Print[ j, OnLine{{List[controlPoint1]}{List[controlPoint2]}} {savedPoints},
                 Format TimeTable, File outputCurrent];
             Print[ b, OnLine{{List[controlPoint1]}{List[controlPoint2]}} {savedPoints},
@@ -229,3 +250,9 @@ PostOperation {
         }
     }
 }
+
+DefineConstant[
+  R_ = {"MagDyn", Name "GetDP/1ResolutionChoices", Visible 0},
+  C_ = {"-solve -pos -bin -v 3 -v2", Name "GetDP/9ComputeCommand", Visible 0},
+  P_ = { "MagDyn", Name "GetDP/2PostOperationChoices", Visible 0}
+];

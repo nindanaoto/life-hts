@@ -3,7 +3,7 @@ a = 0.01; // Cube side [m]
 R_inf = 0.025; // Outer shell radius [m]
 
 // ---- Mesh parameters ----
-DefineConstant [meshMult = 2.2]; // Multiplier [-] of a default mesh size distribution
+DefineConstant [meshMult = 1.1]; // Multiplier [-] of a default mesh size distribution
 // Choose 1.1 for the same mesh than in the article
 
 // ---- Formulation definitions (dummy values) ----

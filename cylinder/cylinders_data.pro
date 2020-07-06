@@ -14,7 +14,7 @@ a_formulation = 6;
 coupled_formulation = 5;
 
 // ---- Constant definition for regions ----
-AIR = 1000;
+AIR = 1;
 AIR_OUT = 2000;
 SURF_SHELL = 3000;
 CUT1 = 9000;
@@ -22,7 +22,7 @@ ARBITRARY_POINT = 11000;
 SURF_SYM = 13000;
 SURF_SYM_MAT = 13500;
 SURF_OUT = 14000;
-SUPER = 23000;
-FERRO = 24000;
+SUPER = 2;
+FERRO = 3;
 BND_OMEGA_C = 25000;
 BND_OMEGA_C_SIDE = 26000;

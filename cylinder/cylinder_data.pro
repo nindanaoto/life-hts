@@ -1,11 +1,14 @@
 // ---- Geometry parameters ----
-R_air = 0.07; // Inner shell radius [m]
-R_inf = 0.1; // Outer shell radius [m]
-W = 0.025; // Diameter of the cylinder [m]
-H_cylinder = 0.01; // Height of the cylinder [m]
-meshLayerWidth = 0.005; // Height of tape 2 [m]
+DefineConstant[
+changeGeometry = {0, Choices{0,1}, Name "Input/1Geometry/1Show geometry?"},
+R_inf = {0.1, Visible changeGeometry, Name "Input/1Geometry/Outer radius (m)"}, // Outer shell radius [m]
+R_air = {0.07, Max R_inf, Visible changeGeometry, Name "Input/1Geometry/Inner radius (m)"}, // Inner shell radius [m]
+W = {0.025, Max R_air/2, Visible changeGeometry, Name "Input/1Geometry/Cylinder diameter (m)"}, // Diameter of the cylinder [m]
+H_cylinder = {0.01, Max R_air/2, Visible changeGeometry, Name "Input/1Geometry/Cylinder height (m)"}, // Height of the cylinder [m]
+meshLayerWidth = {0.005} // Width of the control mesh layer around the cylinder
+];
 // ---- Mesh parameters ----
-DefineConstant [meshMult = 4]; // Multiplier [-] of a default mesh size distribution
+DefineConstant [meshMult = {6, Name "Input/2Mesh/1Mesh size multiplier (-)"}]; // Multiplier [-] of a default mesh size distribution
 
 // ---- Formulation definitions (dummy values) ----
 h_formulation = 2;
