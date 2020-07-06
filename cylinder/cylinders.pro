@@ -118,8 +118,8 @@ Function{
     DefineConstant [epsSigma = 1e-8]; // Importance of the linear part for a-formulation [-]
     DefineConstant [epsSigma2 = 1e-15]; // To prevent division by 0 in sigma [-]
     // Ferromagnetic material parameters
-    DefineConstant [mur0 = 1700.0]; // Relative permeability at low fields [-]
-    DefineConstant [m0 = 1.04e6]; // Magnetic field at saturation [A/m]
+    DefineConstant [mur0 = {1700.0, Name "Input/3Material Properties/3mur at low fields (-)"}]; // Relative permeability at low fields [-]
+    DefineConstant [m0 = {1.04e6, Name "Input/3Material Properties/4Saturation field (Am^-1)"}]; // Magnetic field at saturation [A/m]
     DefineConstant [epsMu = 1e-15]; // To prevent division by 0 in mu [A/m]
     DefineConstant [epsNu = 1e-10]; // To prevent division by 0 in nu [T]
     // Excitation - Source field or imposed current intensty
@@ -234,6 +234,22 @@ Include "../lib/formulations.pro";
 Include "../lib/resolution.pro";
 
 PostOperation {
+    // Runtime output for graph plot
+    { Name Info;
+        If(formulation == h_formulation)
+            NameOfPostProcessing MagDyn_htot ;
+        ElseIf(formulation == a_formulation)
+            NameOfPostProcessing MagDyn_avtot ;
+        ElseIf(formulation == coupled_formulation)
+            NameOfPostProcessing MagDyn_coupled ;
+        EndIf
+        Operation{
+            Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
+            Print[ bsVal[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied field [T]"] ;
+            Print[ m_avg_y_tesla[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Avg. magnetization [T]"] ;
+            Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Joule loss [W]"] ;
+        }
+    }
     { Name MagDyn;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;

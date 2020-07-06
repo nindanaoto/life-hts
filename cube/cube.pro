@@ -1,6 +1,9 @@
 Include "cube_data.pro";
 
 Group {
+    // Output choice
+    DefineConstant[ realTimeSolution = 0 ];
+    DefineConstant[ realTimeInfo = 1 ];
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
     Dim = 3;
@@ -197,6 +200,22 @@ Include "../lib/formulations.pro";
 Include "../lib/resolution.pro";
 
 PostOperation {
+    // Runtime output for graph plot
+    { Name Info;
+        If(formulation == h_formulation)
+            NameOfPostProcessing MagDyn_htot ;
+        ElseIf(formulation == a_formulation)
+            NameOfPostProcessing MagDyn_avtot ;
+        ElseIf(formulation == coupled_formulation)
+            NameOfPostProcessing MagDyn_coupled ;
+        EndIf
+        Operation{
+            Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
+            Print[ bsVal[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied field [T]"] ;
+            Print[ m_avg_y_tesla[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Avg. magnetization [T]"] ;
+            Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Joule loss [W]"] ;
+        }
+    }
     { Name MagDyn;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;
@@ -228,3 +247,9 @@ PostOperation {
         }
     }
 }
+
+DefineConstant[
+  R_ = {"MagDyn", Name "GetDP/1ResolutionChoices", Visible 0},
+  C_ = {"-solve -pos -bin -v 3 -v2", Name "GetDP/9ComputeCommand", Visible 0},
+  P_ = { "MagDyn", Name "GetDP/2PostOperationChoices", Visible 0}
+];

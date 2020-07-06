@@ -1,6 +1,17 @@
 Include "tape_data.pro";
 
 Group {
+    // Preset choice of formulation
+    DefineConstant[preset = {1, Highlight "Blue",
+      Choices{
+        1="h-formulation",
+        2="a-formulation (large steps)",
+        3="a-formulation (small steps)"},
+      Name "Input/5Method/0Preset formulation" },
+      expMode = {0, Choices{0,1}, Name "Input/5Method/1Allow changes?"}];
+    // Output choice
+    DefineConstant[ realTimeSolution = 0 ];
+    DefineConstant[ realTimeInfo = 1 ];
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
     Dim = 2;
@@ -22,9 +33,9 @@ Group {
 
     // ------- WEAK FORMULATION -------
     // Choice of the formulation
-    DefineConstant [formulation = h_formulation];
+    DefineConstant [formulation = (preset==1) ? h_formulation : a_formulation];
     // Iterative methods. Always N-R for the coupled formulation (whatever the values below)
-    DefineConstant [Flag_NR_Super = 1]; // 1: N-R, 0: Picard
+    DefineConstant [Flag_NR_Super = (preset==1) ? 1 : 0]; // 1: N-R, 0: Picard
     DefineConstant [Flag_NR_Ferro = 1]; // 1: N-R, 0: Picard
 
     // ------- Definition of the physical regions -------
@@ -97,8 +108,8 @@ Function{
     // ------- PARAMETERS -------
     // Superconductor parameters
     DefineConstant [ec = 1e-4]; // Critical electric field [V/m]
-    DefineConstant [jc = 2.5e10]; // Critical current density [A/m2]
-    DefineConstant [n = 25]; // Superconductor exponent (n) value [-]
+    DefineConstant [jc = {3e8, Name "Input/3Material Properties/2jc (Am⁻²)"}]; // Critical current density [A/m2]
+    DefineConstant [n = {20, Name "Input/3Material Properties/1n (-)"}]; // Superconductor exponent (n) value [-]
     DefineConstant [epsSigma = 1e-8]; // Importance of the linear part for a-formulation [-]
     DefineConstant [epsSigma2 = 1e-15]; // To prevent division by 0 in sigma [-]
     // Ferromagnetic material parameters
@@ -110,7 +121,7 @@ Function{
     // Excitation - Source field or imposed current intensty
     // 0: sine, 1: triangle, 2: up-down-pause, 3: step, 4: up-pause-down
     DefineConstant [Flag_Source = 0];
-    DefineConstant [IFraction = 0.9];
+    DefineConstant [IFraction = {0.9, Name "Input/4Source/0Fraction of max. current intensity (-)"}];
     DefineConstant [Imax = IFraction*jc*W_tape*H_tape]; // Maximum imposed current intensity [A]
     DefineConstant [f = 50]; // Frequency of imposed current intensity [Hz]
     DefineConstant [bmax = 1]; // Maximum applied magnetic induction [T]
@@ -121,11 +132,13 @@ Function{
     DefineConstant [stepSharpness = 0.001]; // Duration of the step [s]
 
     // Numerical parameters
-    DefineConstant [nbStepsPerPeriod = 100/meshMult]; // Number of time steps over one period [-]
+    DefineConstant [nbStepsPerPeriod = {(preset==1 || preset == 3) ? 400/meshMult : 8, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Number of time step per period (-)"}]; // Number of time steps over one period [-]
     DefineConstant [dt = 1/(nbStepsPerPeriod*f)]; // Time step (initial if adaptive)[s]
     DefineConstant [adaptive = 1]; // Allow adaptive time step increase (case 0 not implemented yet)
     DefineConstant [dt_max = dt]; // Maximum allowed time step [s]
-    DefineConstant [iter_max = 600]; // Maximum number of nonlinear iterations
+    DefineConstant [iter_max = {(preset==1) ? 50 : 600, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Max number of iteration (-)"}]; // Maximum number of nonlinear iterations
     DefineConstant [extrapolationOrder = 1]; // Extrapolation order
     // Use relaxation factors?
     tryrelaxationfactors = 0;
@@ -134,7 +147,8 @@ Function{
     // 1: absolute/relative residual (do not use)
     // 2: relative increment (do not use either)
     DefineConstant [convergenceCriterion = 0];
-    DefineConstant [tol_energy = 1e-6]; // Relative tolerance on the energy estimates
+    DefineConstant [tol_energy = {(preset == 1) ? 1e-6 : 1e-4, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Relative tolerance (-)"}]; // Relative tolerance on the energy estimates
     DefineConstant [tol_abs = 1e-12]; //Absolute tolerance on nonlinear residual
     DefineConstant [tol_rel = 1e-6]; // Relative tolerance on nonlinear residual
     DefineConstant [tol_incr = 1e-5]; // Relative tolerance on the solution increment
@@ -204,6 +218,22 @@ Include "../lib/formulations.pro";
 Include "../lib/resolution.pro";
 
 PostOperation {
+    // Runtime output for graph plot
+    { Name Info;
+        If(formulation == h_formulation)
+            NameOfPostProcessing MagDyn_htot ;
+        ElseIf(formulation == a_formulation)
+            NameOfPostProcessing MagDyn_avtot ;
+        ElseIf(formulation == coupled_formulation)
+            NameOfPostProcessing MagDyn_coupled ;
+        EndIf
+        Operation{
+            Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
+            Print[ I, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied current [A]"] ;
+            Print[ V, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/2Tension [Vm^-1]"] ;
+            Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/3Joule loss [W]"] ;
+        }
+    }
     { Name MagDyn;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;
@@ -236,3 +266,9 @@ PostOperation {
         }
     }
 }
+
+DefineConstant[
+  R_ = {"MagDyn", Name "GetDP/1ResolutionChoices", Visible 0},
+  C_ = {"-solve -pos -bin -v 3 -v2", Name "GetDP/9ComputeCommand", Visible 0},
+  P_ = { "MagDyn", Name "GetDP/2PostOperationChoices", Visible 0}
+];
