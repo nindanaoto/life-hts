@@ -10,8 +10,9 @@ Group {
       Name "Input/5Method/0Preset formulation" },
       expMode = {0, Choices{0,1}, Name "Input/5Method/1Allow changes?"}];
     // Output choice
-    DefineConstant[ realTimeSolution = 0 ];
-    DefineConstant[ realTimeInfo = 1 ];
+    DefineConstant[onelabInterface = {0, Choices{0,1}, Name "Input/3Problem/2Get solution during simulation?"}]; // Set to 0 for launching in terminal (faster)
+    realTimeInfo = 1;
+    realTimeSolution = onelabInterface;
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
     Dim = 2;
@@ -19,12 +20,11 @@ Group {
     MaterialType = 1;
     // Axisymmetry of the problem
     Axisymmetry = 0; // Not axi
-    // Excitation type of the system
-    // 0: External applied field NOT DONE HERE
-    // 1: Imposed current intensity
-    // 2: Imposed voltage NOT IMPLEMENTED YET
-    // 3: Both applied field and current intensity NOT IMPLEMENTED YET
-    SourceType = 1;
+    // Other constants
+    nonlinferro = 0;
+    Flag_CTI = 0;
+    Flag_MB = 0;
+    Flag_rotating = Flag_MB;
 
     // Test name - for output files
     name = "tape";
@@ -115,6 +115,7 @@ Function{
     // Ferromagnetic material parameters
     DefineConstant [mur0 = 1700.0]; // Relative permeability at low fields [-]
     DefineConstant [m0 = 1.04e6]; // Magnetic field at saturation [A/m]
+    DefineConstant [mur = 1000.0]; // Relative permeability for linear material [-]
     DefineConstant [epsMu = 1e-15]; // To prevent division by 0 in mu [A/m]
     DefineConstant [epsNu = 1e-10]; // To prevent division by 0 in nu [T]
 
@@ -168,20 +169,11 @@ Function{
     controlPoint3 = {0, H_tape/2+2e-3, 0}; // CP3
     controlPoint4 = {W_tape, H_tape/2+2e-3, 0}; // CP4
 
-    // Direction of applied field
-    directionApplied[] = Vector[0., 1., 0.];
-    DefineFunction [I, hsVal];
-    mu0 = 4*Pi*1e-7; // [H/m]
-    nu0 = 1.0/mu0;
-    // ------- Constitutive law outside ferro and super -------
-    mu[MagnLinDomain] = mu0;
-    mu[BndOmegaC] = mu0;
-    nu[MagnLinDomain] = nu0;
+    DefineFunction [I, hsVal, js];
 
-    sigma[Copper] = 1e11; // [S/m]
-    rho[Copper] = 1./sigma[];
-    sigmae[Copper] = sigma[$1] * $1;// [S/m]
-
+    // Sine source field
+    controlTimeInstants = {timeFinalSimu, 1/(2*f), 1/f, 3/(2*f), 2*timeFinal};
+    I[] = Imax * Sin[2.0 * Pi * f * $Time];
 }
 
 Constraint {
@@ -234,7 +226,7 @@ PostOperation {
             Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/3Joule loss [W]"] ;
         }
     }
-    { Name MagDyn;
+    { Name MagDyn;LastTimeStepOnly realTimeSolution ;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;
         ElseIf(formulation == a_formulation)
@@ -262,7 +254,6 @@ PostOperation {
                 Format TimeTable, File outputMagInduction1];
             Print[ b, OnLine{{List[controlPoint3]}{List[controlPoint4]}} {savedPoints},
                 Format TimeTable, File outputMagInduction2];
-            Print[ hsVal[Omega], OnRegion Omega, Format TimeTable, File outputAppliedField];
         }
     }
 }

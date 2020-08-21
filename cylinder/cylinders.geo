@@ -97,10 +97,19 @@ Physical Line("Boundary Omega_C side", BND_OMEGA_C_SIDE) = {3};
 
 
 // Some colors
-Color Red {Surface{42};} // Lower cylinder
-Color Green {Surface{43};} // Upper cylinder
-Color SkyBlue   {Surface{40, 41};} // Air + Air inf
+Color SkyBlue {Surface{41, 45, 40};} // Air + Air inf
+Color SteelBlue {Surface{43};}
+Color Purple {Surface{42};} // Cylinder
 
+linair[]  = CombinedBoundary{Surface{40,41,45};};
+lincyl1[]  = CombinedBoundary{Surface{42};};
+lincyl2[]  = CombinedBoundary{Surface{43};};
+
+Hide { Point{ Point '*' }; }
+Hide { Line{ Line '*' }; }
+Show { Line{ linair[] }; }
+Show { Line{ lincyl1[] }; }
+Show { Line{ lincyl2[] }; }
 
 
 // End

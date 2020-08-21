@@ -10,9 +10,9 @@ Group {
       Name "Input/5Method/0Preset formulation" },
       expMode = {0, Choices{0,1}, Name "Input/5Method/1Allow changes?"}];
     // Output choice
-    DefineConstant[ realTimeSolution = 0 ];
-    DefineConstant[ realTimeInfo = 1 ];
-
+    DefineConstant[onelabInterface = {0, Choices{0,1}, Name "Input/3Problem/2Get solution during simulation?"}]; // Set to 0 for launching in terminal (faster)
+    realTimeInfo = 1;
+    realTimeSolution = onelabInterface;
 
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
@@ -21,13 +21,11 @@ Group {
     MaterialType = 1;
     // Axisymmetry of the problem, 0: no, 1: yes
     Axisymmetry = 1;
-    // Excitation type of the system
-    // 0: External applied field
-    // 1: Imposed current intensity NOT SUITED HERE FOR THIS AXISYMMETRIC EXAMPLE
-    // 2: Imposed voltage NOT IMPLEMENTED YET
-    // 3: Both applied field and current intensity NOT IMPLEMENTED YET
-    SourceType = 0;
-
+    // Other constants
+    nonlinferro = 0;
+    Flag_CTI = 0;
+    Flag_MB = 0;
+    Flag_rotating = Flag_MB;
     // Test name - for output files
     name = "cylinder";
     // (directory name for .txt files, not .pos files)
@@ -108,6 +106,7 @@ Function{
     // Ferromagnetic material parameters
     DefineConstant [mur0 = 1700.0]; // Relative permeability at low fields [-]
     DefineConstant [m0 = 1.04e6]; // Magnetic field at saturation [A/m]
+    DefineConstant [mur = 1000.0]; // Relative permeability for linear material [-]
     DefineConstant [epsMu = 1e-15]; // To prevent division by 0 in mu [A/m]
     DefineConstant [epsNu = 1e-10]; // To prevent division by 0 in nu [T]
     // Excitation - Source field or imposed current intensty
@@ -116,7 +115,6 @@ Function{
         0="Sine",
         1="Triangle",
         4="Up-pause-down"}, Name "Input/4Source/0Source field type" }];
-    DefineConstant [Imax = jc*H_cylinder*W/2]; // Maximum imposed current intensity [A]
     DefineConstant [f = {0.1, Visible (Flag_Source ==0), Name "Input/4Source/1Frequency (Hz)"}]; // Frequency of imposed current intensity [Hz]
     DefineConstant [bmax = {1, Name "Input/4Source/2Field amplitude (T)"}]; // Maximum applied magnetic induction [T]
     DefineConstant [partLength = {5, Visible (Flag_Source != 0), Name "Input/4Source/1Ramp duration (s)"}];
@@ -164,17 +162,31 @@ Function{
 
     // Direction of applied field
     directionApplied[] = Vector[0., 1., 0.]; // Only choice for axi
-    DefineFunction [I, hsVal];
+    DefineFunction [I, js, hsVal];
     mu0 = 4*Pi*1e-7; // [H/m]
-    nu0 = 1.0/mu0;
-    // ------- Constitutive law outside ferro and super -------
-    mu[MagnLinDomain] = mu0;
-    mu[BndOmegaC] = mu0;
-    nu[MagnLinDomain] = nu0;
+    nu0 = 1.0/mu0; // [m/H]
+    hmax = bmax / mu0;
+    If(Flag_Source == 0)
+        // Sine source field
+        controlTimeInstants = {timeFinalSimu, 1/(2*f), 1/f, 3/(2*f), 2*timeFinal};
+        hsVal[] = hmax * Sin[2.0 * Pi * f * $Time];
+    ElseIf(Flag_Source == 1)
+        // Triangle source field (5/4 of a complete cycle)
+        controlTimeInstants = {timeFinal, timeFinal/5.0, 3.0*timeFinal/5.0, timeFinal};
+        rate = hmax * 5.0 / timeFinal;
+        hsVal[] = (($Time < timeFinal/5.0) ? $Time * rate :
+                    ($Time >= timeFinal/5.0 && $Time < 3.0*timeFinal/5.0) ?
+                    hmax - ($Time - timeFinal/5.0) * rate :
+                    - hmax + ($Time - 3.0*timeFinal/5.0) * rate);
+    ElseIf(Flag_Source == 4)
+        // Up-pause-down
+        controlTimeInstants = {timeFinal/3.0, 2.0*timeFinal/3.0, timeFinal};
+        rate = hmax * 3.0 / timeFinal;
+        hsVal[] = (($Time < timeFinal/3.0) ? $Time * rate :
+                    ($Time < 2.0*timeFinal/3.0 ? hmax : hmax - ($Time - 2.0*timeFinal/3.0) * rate));
+    EndIf
 
-    sigma[Copper] = 1e11; // [S/m]
-    rho[Copper] = 1./sigma[];
-    sigmae[Copper] = sigma[$1] * $1;// [S/m]
+
 
 }
 

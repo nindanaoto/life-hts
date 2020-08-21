@@ -118,8 +118,15 @@ Physical Line("Positive side of bnds", BND_MATERIAL_SIDE) = {15};
 
 // Some colors
 Color SkyBlue {Surface{40, 41, 52, 53, 54, 55, 56};} // Air + Air inf
-Color Green {Surface{43};} // Cylinder
+Color Purple {Surface{43};} // Cylinder
 
+linair[]  = CombinedBoundary{Surface{41, 52, 53, 54, 55, 56, 40};};
+lincyl[]  = CombinedBoundary{Surface{43};};
+
+Hide { Point{ Point '*' }; }
+Hide { Line{ Line '*' }; }
+Show { Line{ linair[] }; }
+Show { Line{ lincyl[] }; }
 
 
 // End

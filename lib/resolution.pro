@@ -256,6 +256,10 @@ Resolution {
             SetTimeStep[ 0 ];
             Evaluate[ $iter = 0 ];
             Evaluate[ $elapsedCTI = 0 ]; // Number of control time instants already treated
+            If(Flag_MB == 1)
+                InitMovingBand2D[MB] ;
+                MeshMovingBand2D[MB] ;
+            EndIf
             InitSolution[A];
             SaveSolution[A];
 
@@ -275,13 +279,19 @@ Resolution {
             // Avoid too close steps at the end. Stop the simulation if the step becomes ridiculously small
             While[$Time < timeFinalSimu - 1e-5 && $DTime > 1e-10 && $DTime > dt/50000] {
                 SetTime[ $Time + $DTime ]; // Time instant at which we are looking for the solution
+                If(Flag_MB == 1 && Flag_rotating == 1)
+                    ChangeOfCoordinates[ NodesOf[Rotor_Moving], RotatePZ[delta_theta[]]];
+                    MeshMovingBand2D[MB] ;
+                EndIf
                 // Make sure all CTI are exactly chosen
                 Evaluate[ $isCTI = 0 ];
-                Test[ $Time >= AtIndex[$elapsedCTI]{List[controlTimeInstants]} - 1e-6 ]{
-                    Evaluate[ $isCTI = 1, $prevDTime = $DTime ];
-                    SetDTime[ AtIndex[$elapsedCTI]{List[controlTimeInstants]} - $Time + $DTime ];
-                    SetTime[ AtIndex[$elapsedCTI]{List[controlTimeInstants]} ]; // To compute exactly at the asked time instant
-                }
+                If(Flag_CTI == 1)
+                    Test[$Time >= AtIndex[$elapsedCTI]{List[controlTimeInstants]} - 1e-6 ]{
+                        Evaluate[ $isCTI = 1, $prevDTime = $DTime ];
+                        SetDTime[ AtIndex[$elapsedCTI]{List[controlTimeInstants]} - $Time + $DTime ];
+                        SetTime[ AtIndex[$elapsedCTI]{List[controlTimeInstants]} ]; // To compute exactly at the asked time instant
+                    }
+                EndIf
 
                 SetTimeStep[ $TimeStep + 1 ];
                 // ----- Enter custom iterative loop -----
@@ -330,7 +340,10 @@ Resolution {
                 }
                 // ...otherwise, reduce the time step and try again
                 {
-                    //Evaluate[ $startSaving = 1];
+                    // Replace the rotor at its previous position
+                    If(Flag_MB == 1 && Flag_rotating == 1)
+                        ChangeOfCoordinates[ NodesOf[Rotor_Moving], RotatePZ[-delta_theta[]]];
+                    EndIf
                     Evaluate[ $dt_new = $DTime / 2 ];
                     Print[{$iter, $dt_new},
                         Format "*** Non convergence (iter %g): recomputing with reduced step %g"];
@@ -365,7 +378,7 @@ PostOperation {
         Operation{
             Print[ power[Air], OnGlobal, Format Table, StoreInVariable $indicAir, File "res/dummy.txt"];
             Print[ power[Ferro], OnGlobal, Format Table, StoreInVariable $indicFerro, File > "res/dummy.txt" ];
-            Print[ power[Super], OnGlobal, Format Table, StoreInVariable $indicSuper, File > "res/dummy.txt" ];
+            Print[ power[NonLinOmegaC], OnGlobal, Format Table, StoreInVariable $indicSuper, File > "res/dummy.txt" ];
             Print[ dissPower[NonLinOmegaC], OnGlobal, Format Table, StoreInVariable $indicDissSuper, File > "res/dummy.txt" ];
             Print[ dissPower[LinOmegaC], OnGlobal, Format Table, StoreInVariable $indicDissLin, File > "res/dummy.txt" ];
 

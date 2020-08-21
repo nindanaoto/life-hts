@@ -11,7 +11,11 @@ Group{
         Omega_h_OmegaC = Region[{OmegaC}];
         Omega_h_OmegaC_AndBnd = Region[{OmegaC, BndOmegaC}];
         Omega_h_OmegaCC = Region[{OmegaCC}];
-        Omega_h_OmegaCC_AndBnd = Region[{OmegaCC, BndOmegaC}];
+        If(Flag_MB==1)
+            Omega_h_OmegaCC_AndBnd = Region[{OmegaCC, BndOmegaC, Rotor_Bnd_MBaux}];
+        Else
+            Omega_h_OmegaCC_AndBnd = Region[{OmegaCC, BndOmegaC}];
+        EndIf
         Omega_a  = Region[{}];
         Omega_a_AndBnd = Region[{}];
         Omega_a_OmegaCC = Region[{}];
@@ -23,7 +27,11 @@ Group{
         Omega_h_OmegaCC = Region[{}];
         Omega_h_OmegaCC_AndBnd = Region[{}];
         Omega_a  = Region[{Omega}];
-        Omega_a_AndBnd  = Region[{Omega, GammaAll, BndOmegaC}];
+        If(Flag_MB==1)
+            Omega_a_AndBnd  = Region[{Omega, GammaAll, BndOmegaC, Rotor_Bnd_MBaux}];
+        Else
+            Omega_a_AndBnd  = Region[{Omega, GammaAll, BndOmegaC}];
+        EndIf
         Omega_a_OmegaCC = Region[{OmegaCC}];
         Omega_a_OmegaCC_AndBnd = Region[{OmegaCC, BndOmegaC}];
         BndOmega_ha = Region[{}];
@@ -34,11 +42,18 @@ Group{
         Omega_h_OmegaCC = Region[{}];
         Omega_h_OmegaCC_AndBnd = Region[{BndOmegaC}];
         Omega_a  = Region[{OmegaCC}];
-        Omega_a_AndBnd  = Region[{Omega_a, GammaAll, BndOmegaC}];
+        If(Flag_MB==1)
+            Omega_a_AndBnd  = Region[{Omega, GammaAll, BndOmegaC, Rotor_Bnd_MBaux}];
+        Else
+            Omega_a_AndBnd  = Region[{Omega, GammaAll, BndOmegaC}];
+        EndIf
         Omega_a_OmegaCC = Region[{OmegaCC}];
         BndOmega_ha = Region[{BndOmegaC}];
     EndIf
     TransitionLayerAndBndOmegaC = ElementsOf[BndOmegaC_side, OnOneSideOf Cuts];
+}
+Function{
+    T_max[] = ( SquDyadicProduct[$1] - SquNorm[$1] * TensorDiag[0.5, 0.5, 0.5] ) / mu0 ;
 }
 
 // ----------------------------------------------------------------------------
@@ -236,6 +251,12 @@ Formulation {
             { Name V; Type Global; NameOfSpace h_space[V]; }
         }
         Equation {
+            // DO NOT REMOVE!!!
+            // Keeping track of Dofs in auxiliar line of MB if Symmetry==1
+            If(Flag_MB==1)
+                Galerkin {  [  0*Dof{h} , {h} ]  ;
+                    In Rotor_Bnd_MBaux; Jacobian Sur; Integration Int; }
+            EndIf
             // Time derivative of b (NonMagnDomain)
             Galerkin { [ mu[] * Dof{h} / $DTime , {h} ];
                 In MagnLinDomain; Integration Int; Jacobian Vol;  }
@@ -297,6 +318,12 @@ Formulation {
             EndIf
         }
         Equation {
+            // DO NOT REMOVE!!!
+            // Keeping track of Dofs in auxiliar line of MB if Symmetry==1
+            If(Flag_MB==1)
+              Galerkin {  [  0*Dof{d a} , {d a} ]  ;
+                In Rotor_Bnd_MBaux; Jacobian Sur; Integration Int; }
+            EndIf
             // Curl h term - NonMagnDomain
             Galerkin { [ nu[] * Dof{d a} , {d a} ];
                 In MagnLinDomain; Integration Int; Jacobian Vol; }
@@ -367,6 +394,9 @@ Formulation {
                 In LinOmegaC; Integration Int; Jacobian Vol;  }
             Galerkin { [ sigma[] * Dof{ur} , {ur} ];
                 In LinOmegaC; Integration Int; Jacobian Vol;  }
+            // Stranded conductor region (belongs to OmegaCC)
+            Galerkin { [ -js[] , {a} ];
+                In OmegaC_stranded; Integration Int; Jacobian Vol;  }
             // Global term
             If(Dim == 1 || Dim == 2)
                 GlobalTerm { [ Dof{I}  , {U} ]; In OmegaC; }
@@ -395,6 +425,12 @@ Formulation {
             EndIf
         }
         Equation {
+            // DO NOT REMOVE!!!
+            // Keeping track of Dofs in auxiliar line of MB if Symmetry==1
+            If(Flag_MB==1)
+              Galerkin {  [  0*Dof{d a} , {d a} ]  ;
+                In Rotor_Bnd_MBaux; Jacobian Sur; Integration Int; }
+            EndIf
             // ---- SUPER ----
             // Time derivative - current solution
             Galerkin { [ mu[] * Dof{h} / $DTime , {h} ];
@@ -413,6 +449,9 @@ Formulation {
             // Linear OmegaC
             Galerkin { [ rho[] * Dof{d h} , {d h} ];
                 In LinOmegaC; Integration Int; Jacobian Vol;  }
+            // Stranded conductor region (belongs to OmegaCC)
+            Galerkin { [ -js[] , {a} ];
+                In OmegaC_stranded; Integration Int; Jacobian Vol;  }
             // ---- FERRO ----
             // Curl h term - NonMagnDomain
             Galerkin { [ nu[] * Dof{d a} , {d a} ];
@@ -487,6 +526,8 @@ PostProcessing {
                     In OmegaC; Integration Int; Jacobian Vol; } } }
                 { Name m_avg_y_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_x_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[1,0,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
             ElseIf(Dim == 3)
                 { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[] /\ {d h} / GetVolume[] ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
@@ -494,6 +535,10 @@ PostProcessing {
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
             { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
             { Name time; Value{ Term { [ $Time ]; In Omega; } } }
+            { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
+            If(Flag_MB == 1)
+                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+            EndIf
             { Name power;
                 Value{
                     Integral{ [ (mu[{h}]*{h} - mu[{h}[1]]*{h}[1]) / $DTime * {h} ] ;
@@ -521,6 +566,8 @@ PostProcessing {
         Quantity {
             { Name a; Value{ Local{ [ {a} ] ;
                 In Omega; Jacobian Vol; } } }
+            { Name az; Value{ Local{ [ CompZ[{a}] ] ;
+                In Omega; Jacobian Vol; } } }
             { Name b; Value{ Local{ [ {d a} ] ;
                 In Omega; Jacobian Vol; } } }
             { Name mur; Value{ Local{ [ 1.0/(nu[{d a}] * mu0) ] ;
@@ -536,6 +583,8 @@ PostProcessing {
                 In OmegaC; Jacobian Vol; } } }
             { Name j; Value{ Local{ [ sigmae[ - Dt[{a}] - {ur} ] ] ;
                 In OmegaC; Jacobian Vol; } } }
+            { Name js; Value{ Local{ [ js[] ] ;
+                In OmegaC_stranded; Jacobian Vol; } } }
             { Name jnorm; Value{ Local{ [ Norm[sigmae[ - Dt[{a}] - {ur} ]] ] ;
                 In OmegaC; Jacobian Vol; } } }
             { Name jz; Value{ Local{ [ CompZ[sigmae[ - Dt[{a}] - {ur} ]] ] ;
@@ -560,10 +609,17 @@ PostProcessing {
                 { Name m_avg_y_tesla; Value{ Integral{ [ mu0*0.5 * Vector[0,1,0] * (XYZ[]
                     /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (SurfaceArea[]) ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_x_tesla; Value{ Integral{ [ mu0*0.5 * Vector[1,0,0] * (XYZ[]
+                    /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
             EndIf
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
             { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
             { Name time; Value{ Term { [ $Time ]; In Omega; } } }
+            { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
+            If(Flag_MB == 1)
+                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+            EndIf
             { Name power;
                 Value{
                     Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[{d a}] * {d a} ] ;
@@ -587,6 +643,18 @@ PostProcessing {
                         In OmegaC ; Integration Int ; Jacobian Vol; }
                 }
             }
+            If(Flag_MB==1)
+                { Name torqueMaxwell ;
+                  // Torque computation via Maxwell stress tensor
+                  Value {
+                    Integral {
+                      // \int_S (\vec{r} \times (T_max \vec{n}) ) / ep
+                      // with ep = |S| / (2\pi r_avg) (directly accounts for the total torque for the total circumference)
+                      [ CompZ [ XYZ[] /\ (T_max[{d a}] * XYZ[]) ] * 2*Pi*thickness/SurfaceArea[] ] ;
+                      In Omega ; Jacobian Vol  ; Integration Int; }
+                  }
+                }
+            EndIf
         }
     }
     // Coupled formulation
@@ -609,6 +677,8 @@ PostProcessing {
                 In OmegaCC; Jacobian Vol; } } }
             { Name j; Value{ Local{ [ {d h} ] ;
                 In OmegaC; Jacobian Vol; } } }
+            { Name js; Value{ Local{ [ js[] ] ;
+                In OmegaC_stranded; Jacobian Vol; } } }
             { Name e; Value{ Local{ [ rho[{d h}, mu[{h}]*Norm[{h}] ]*{d h} ] ;
                 In OmegaC; Jacobian Vol; } } }
             { Name jz; Value{ Local{ [ CompZ[{d h}] ] ;
@@ -625,12 +695,19 @@ PostProcessing {
                     In OmegaC; Integration Int; Jacobian Vol; } } }
                 { Name m_avg_y_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[0,1,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
                     In OmegaC; Integration Int; Jacobian Vol; } } }
+                { Name m_avg_x_tesla; Value{ Integral{ [ mu0 * 0.5 * Vector[1,0,0] * (XYZ[] /\ {d h}) / (SurfaceArea[]) ] ;
+                    In OmegaC; Integration Int; Jacobian Vol; } } }
             EndIf
             { Name b_avg; Value{ Integral{ [ 2*Pi*mu[{h}] * {h} / (SurfaceArea[]) ] ;
                 In OmegaC; Integration Int; Jacobian Vol; } } }
             { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
             { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
             { Name time; Value{ Term { [ $Time ]; In Omega; } } }
+            { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
+            If(Flag_MB == 1)
+                { Name js_value; Value{ Term { [ pulse[] ]; In Omega; } } }
+                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+            EndIf
             { Name power;
                 Value{
                     Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[{d a}] * {d a} ] ;
@@ -664,6 +741,18 @@ PostProcessing {
                     Term{ [ {V}*{I} ] ; In Cuts;}
                 }
             }
+            If(Flag_MB==1)
+                { Name torqueMaxwell ;
+                  // Torque computation via Maxwell stress tensor (should be in a domain)
+                  Value {
+                    Integral {
+                      // \int_S (\vec{r} \times (T_max \vec{n}) ) / ep
+                      // with ep = |S| / (2\pi r_avg) (directly accounts for the total torque for the total circumference)
+                      [ CompZ [ XYZ[] /\ (T_max[{d a}] * XYZ[]) ] * 2*Pi*thickness/SurfaceArea[] ] ;
+                      In Omega ; Jacobian Vol  ; Integration Int; }
+                  }
+                }
+            EndIf
         }
     }
 }
