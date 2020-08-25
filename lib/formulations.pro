@@ -537,7 +537,7 @@ PostProcessing {
             { Name time; Value{ Term { [ $Time ]; In Omega; } } }
             { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
             If(Flag_MB == 1)
-                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+                { Name rotor_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
             EndIf
             { Name power;
                 Value{
@@ -618,7 +618,7 @@ PostProcessing {
             { Name time; Value{ Term { [ $Time ]; In Omega; } } }
             { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
             If(Flag_MB == 1)
-                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+                { Name rotor_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
             EndIf
             { Name power;
                 Value{
@@ -706,7 +706,7 @@ PostProcessing {
             { Name time_ms; Value{ Term { [ 1000*$Time ]; In Omega; } } }
             If(Flag_MB == 1)
                 { Name js_value; Value{ Term { [ pulse[] ]; In Omega; } } }
-                { Name stator_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
+                { Name rotor_angle; Value{ Term { [ 180/Pi*omega*$Time ]; In Omega; } } }
             EndIf
             { Name power;
                 Value{

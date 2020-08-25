@@ -334,7 +334,7 @@ PostOperation {
         Operation{
             Print[ time_ms[Magnet1], OnRegion Magnet1, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [ms]"] ;
             If(preset < 3)
-                Print[ stator_angle[Magnet1], OnRegion Magnet1, LastTimeStepOnly, Format Table, SendToServer "Output/0Stator angle [deg]"] ;
+                Print[ rotor_angle[Magnet1], OnRegion Magnet1, LastTimeStepOnly, Format Table, SendToServer "Output/0Rotor angle [deg]"] ;
                 Print[ torqueMaxwell[Stator_Airgap], OnGlobal, Format Table,
                     LastTimeStepOnly, SendToServer "Output/3Torque [Nm]", Color "Ivory" ];
             ElseIf(preset == 3)
