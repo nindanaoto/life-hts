@@ -142,7 +142,7 @@ Function{
     // Excitation - Source field or imposed current intensty
     // 0: sine, 1: triangle, 2: up-down-pause, 3: step, 4: up-pause-down
     DefineConstant [F = {0.9, Visible (preset==4), ReadOnly !expMode, Name "Input/3Problem/1Filling factor for current (-)"}]; // Relative permeability at low fields [-]
-    DefineConstant [Imax = F*jc*R2*(A2-A1)/2*jcw]; // Maximum imposed current intensity [A]
+    DefineConstant [Imax = F*jc*R2*(A2-A1)*jcw]; // Maximum imposed current intensity [A]
     DefineConstant [f = (preset!=4) ? 250 : 50]; // Frequency of imposed current intensity [Hz]
     DefineConstant [t_pulse = 0.1];
     DefineConstant [amplitude = 25]; // Peak intensity relative to motor mode intensity
@@ -152,7 +152,7 @@ Function{
     DefineConstant [timeFinalSimu = timeFinal];//timeFinal]; // Final time of simulation [s]
 
     // ------- NUMERICAL PARAMETERS -------
-    DefineConstant [dt = {(preset == 3) ? meshMult*t_pulse/300 : meshMult*timeFinal/500, Highlight "LightBlue",
+    DefineConstant [dt = {(preset == 3) ? meshMult*t_pulse/300 : meshMult*timeFinal/(preset == 4 ? 1000:500), Highlight "LightBlue",
         ReadOnly !expMode, Name "Input/5Method/Time step (s)"}]; // Time step (initial if adaptive)[s]
     DefineConstant [adaptive = 1]; // Allow adaptive time step increase (case 0 not implemented yet)
     DefineConstant [dt_max = (preset==3)?4*dt:dt]; // Maximum allowed time step [s]

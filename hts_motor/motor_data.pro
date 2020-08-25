@@ -1,5 +1,5 @@
 // Preset choice of problem resolution
-DefineConstant[preset = {1, Highlight "Blue",
+DefineConstant[preset = {4, Highlight "Blue",
       Choices{
         1="Motor with rotation (a-formulation)",
         2="Torque vs. starting angle (a-formulation)",
