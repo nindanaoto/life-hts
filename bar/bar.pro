@@ -1,4 +1,4 @@
-Include "concentric_data.pro";
+Include "bar_data.pro";
 
 Group {
     // Preset choice of formulation
@@ -13,23 +13,23 @@ Group {
     DefineConstant[onelabInterface = {0, Choices{0,1}, Name "Input/3Problem/2Get solution during simulation?"}]; // Set to 0 for launching in terminal (faster)
     realTimeInfo = 1;
     realTimeSolution = onelabInterface;
-
     // ------- PROBLEM DEFINITION -------
     // Dimension of the problem
     Dim = 2;
     // Material type of region MATERIAL, 0: air, 1: super, 2: copper, 3: soft ferro
     MaterialType = 1;
-    // Axisymmetry of the problem, 0: no, 1: yes
-    Axisymmetry = 0;
+    // Axisymmetry of the problem
+    Axisymmetry = 0; // Not axi
     // Other constants
     nonlinferro = 0;
     Flag_CTI = 0;
     Flag_MB = 0;
     Flag_rotating = Flag_MB;
+
     // Test name - for output files
-    name = "concentric";
+    name = "bar";
     // (directory name for .txt files, not .pos files)
-    DefineConstant [testname = "concentric_model"];
+    DefineConstant [testname = "bar_model"];
 
     // ------- WEAK FORMULATION -------
     // Choice of the formulation
@@ -46,7 +46,7 @@ Group {
     DefineGroup[Gamma_e, Gamma_h, GammaAll];
 
     // Filling the regions
-    Air = Region[ {AIR,CU} ];
+    Air = Region[ AIR ];
     Air += Region[ AIR_OUT ];
     DefineGroup [Super, Copper, Cond1, Cond2, Cut1, Cut2, Electrode1, Electrode2];
     DefineGroup [Ferro, FerroAnhy, FerroHyst];
@@ -54,18 +54,35 @@ Group {
     IsThereSuper = 0; // Will be updated below if necessary
     Flag_Hysteresis = 0; // Will be updated below if necessary
     Flag_LinearProblem = 1; // Will be updated below if necessary
-
-    Super += Region[ SU ];
-    Cond1 = Region[ SU ];
-    BndOmegaC += Region[ {BND_SU_OUTER,BND_SU_INNER} ];
-    Cuts = Region[ CUT ];
-    IsThereSuper = 1;
-    Flag_LinearProblem = 0;
-
-    FerroHyst = Region[{FE1,FE2}];
+    If(MaterialType == 0)
+        Air += Region[ MATERIAL ];
+    ElseIf(MaterialType == 1)
+        Super += Region[ MATERIAL ];
+        Cond1 = Region[ MATERIAL ];
+        BndOmegaC += Region[ BND_MATERIAL ];
+        BndOmegaC_side += Region[ BND_MATERIAL_SIDE ];
+        Cut1 = Region[ CUT ];
+        IsThereSuper = 1;
+        Flag_LinearProblem = 0;
+    ElseIf(MaterialType == 2)
+        Copper += Region[ MATERIAL ];
+        Cond1 = Region[ MATERIAL ];
+        BndOmegaC += Region[ BND_MATERIAL ];
+        BndOmegaC_side += Region[ BND_MATERIAL_SIDE ];
+        Cut1 = Region[ CUT ];
+    ElseIf(MaterialType == 3)
+        FerroAnhy += Region[ MATERIAL ];
+        IsThereFerro = 1;
+        Flag_LinearProblem = 0;
+    ElseIf(MaterialType == 4)
+        FerroHyst += Region[ MATERIAL ];
+        IsThereFerro = 1;
+        Flag_Hysteresis = 1;
+        Flag_LinearProblem = 0;
+    EndIf
     Ferro = Region[ {FerroAnhy, FerroHyst} ];
     SurfOut = Region[ SURF_OUT ];
-    // SurfSym = Region[ SURF_SYM ];
+    SurfSym = Region[ SURF_SYM ];
     SurfSymMat = Region[ {} ];
     ArbitraryPoint = Region[ ARBITRARY_POINT ];
     // Remaining regions
@@ -80,7 +97,7 @@ Group {
     MagnAnhyDomain = Region[ {FerroAnhy} ];
     MagnHystDomain = Region[ {FerroHyst} ];
     Gamma_h = Region[{}];
-    // Gamma_e = Region[{SurfOut, SurfSym, SurfSymMat}];
+    Gamma_e = Region[{SurfOut, SurfSym, SurfSymMat}];
 
     GammaAll = Region[ {Gamma_h, Gamma_e} ];
     OmegaGamma = Region[ {Omega, GammaAll} ];
@@ -101,14 +118,12 @@ Function{
     DefineConstant [mur = 1000.0]; // Relative permeability for linear material [-]
     DefineConstant [epsMu = 1e-15]; // To prevent division by 0 in mu [A/m]
     DefineConstant [epsNu = 1e-10]; // To prevent division by 0 in nu [T]
+
     // Excitation - Source field or imposed current intensty
     // 0: sine, 1: triangle, 2: up-down-pause, 3: step, 4: up-pause-down
-    DefineConstant [Flag_Source = {0, Highlight "yellow", Choices{
-        0="Sine",
-        1="Triangle",
-        4="Up-pause-down"}, Name "Input/4Source/0Source field type" }];
+    DefineConstant [Flag_Source = 0];
     DefineConstant [IFraction = {0.9, Name "Input/4Source/0Fraction of max. current intensity (-)"}];
-    DefineConstant [Imax = IFraction*jc]; // Maximum imposed current intensity [A]
+    DefineConstant [Imax = IFraction*jc*W_tape*H_tape]; // Maximum imposed current intensity [A]
     DefineConstant [f = 50]; // Frequency of imposed current intensity [Hz]
     DefineConstant [bmax = 1]; // Maximum applied magnetic induction [T]
     DefineConstant [timeStart = 0]; // Initial time [s]
@@ -117,14 +132,15 @@ Function{
     DefineConstant [stepTime = 0.01]; // Initiation of the step [s]
     DefineConstant [stepSharpness = 0.001]; // Duration of the step [s]
 
-    // ------- NUMERICAL PARAMETERS -------
-    DefineConstant [dt = {(preset==1 || preset == 3) ? meshMult*timeFinal/300 : timeFinal/15, Highlight "LightBlue",
-        ReadOnly !expMode, Name "Input/5Method/Time step (s)"}]; // Time step (initial if adaptive)[s]
+    // Numerical parameters
+    DefineConstant [nbStepsPerPeriod = {(preset==1 || preset == 3) ? 400/meshMult : 8, Highlight "LightBlue",
+        ReadOnly !expMode, Name "Input/5Method/Number of time step per period (-)"}]; // Number of time steps over one period [-]
+    DefineConstant [dt = 1/(nbStepsPerPeriod*f)]; // Time step (initial if adaptive)[s]
     DefineConstant [adaptive = 1]; // Allow adaptive time step increase (case 0 not implemented yet)
     DefineConstant [dt_max = dt]; // Maximum allowed time step [s]
-    DefineConstant [iter_max = {(preset==1) ? 30 : 600, Highlight "LightBlue",
+    DefineConstant [iter_max = {(preset==1) ? 50 : 600, Highlight "LightBlue",
         ReadOnly !expMode, Name "Input/5Method/Max number of iteration (-)"}]; // Maximum number of nonlinear iterations
-    DefineConstant [extrapolationOrder = (preset==1) ? 1 : 2]; // Extrapolation order
+    DefineConstant [extrapolationOrder = 1]; // Extrapolation order
     // Use relaxation factors?
     tryrelaxationfactors = 0;
     // Convergence criterion
@@ -136,37 +152,30 @@ Function{
         ReadOnly !expMode, Name "Input/5Method/Relative tolerance (-)"}]; // Relative tolerance on the energy estimates
     DefineConstant [tol_abs = 1e-12]; //Absolute tolerance on nonlinear residual
     DefineConstant [tol_rel = 1e-6]; // Relative tolerance on nonlinear residual
-    DefineConstant [tol_incr = 5e-3]; // Relative tolerance on the solution increment
+    DefineConstant [tol_incr = 1e-5]; // Relative tolerance on the solution increment
     multFix = 1e0;
     // Output information
     DefineConstant [economPos = 0]; // 0: Saves all fields. 1: Does not save fields (.pos)
     DefineConstant [economInfo = 0]; // 0: Saves all iteration/residual info. 1: Does not save them
     // Parameters
     DefineConstant [saveAll = 0];  // Save all the iterations? (pay attention to memory! heavy files)
-    DefineConstant [writeInterval = dt]; // Time interval between two successive output file saves [s]
     DefineConstant [saveAllSteps = 0];
     DefineConstant [saveAllStepsSeparately = 0];
+    DefineConstant [writeInterval = dt]; // Time interval between two successive output file saves [s]
     DefineConstant [savedPoints = 2000]; // Resolution of the line saving postprocessing
     // Control points
-    controlPoint1 = {-R_wire,0, 0}; // CP1
-    controlPoint2 = {R_wire, 0, 0}; // CP2
-    controlPoint3 = {0, R_wire, 0}; // CP3
-    controlPoint4 = {0, -R_wire, 0}; // CP4
+    controlPoint1 = {-W_tape/2+1e-5,0, 0}; // CP1
+    controlPoint2 = {W_tape/2-1e-5, 0, 0}; // CP2
+    controlPoint3 = {0, H_tape/2+2e-3, 0}; // CP3
+    controlPoint4 = {W_tape, H_tape/2+2e-3, 0}; // CP4
 
-    // Direction of applied field
-    directionApplied[] = Vector[0., 1., 0.]; // Only choice for axi
-    DefineFunction [I, js, hsVal];
-    mu0 = 4*Pi*1e-7; // [H/m]
-    nu0 = 1.0/mu0; // [m/H]
-    hmax = bmax / mu0;
+    DefineFunction [I, hsVal, js];
 
     // Sine source field
     controlTimeInstants = {timeFinalSimu, 1/(2*f), 1/f, 3/(2*f), 2*timeFinal};
     I[] = Imax * Sin[2.0 * Pi * f * $Time];
-
 }
 
-// Only external field is implemented
 Constraint {
     { Name a ;
         Case {
@@ -187,27 +196,18 @@ Constraint {
         Case {
             If(formulation == h_formulation || formulation == coupled_formulation)
                 // h-formulation and cuts
-                { Region Cuts; Value 1.0; TimeFunction I[]; }
+                { Region Cut1; Value 1.0; TimeFunction I[]; }
             Else
                 // a-formulation and BF_RegionZ
                 { Region Cond1; Value 1.0; TimeFunction I[]; }
             EndIf
         }
     }
-    { Name Voltage ;
-        Case {
-            If(formulation == h_formulation || formulation == coupled_formulation)
-                // No cut in this geometry
-            Else
-                // a-formulation and BF_RegionZ
-                { Region Cond1; Value 0.0; }
-            EndIf
-        }
-    }
+    { Name Voltage ; Case { } } // Nothing
 }
 
-Include "lib/cohomformulations.pro";
-Include "lib/resolution.pro";
+Include "cohomformulations.pro";
+Include "../lib/resolution.pro";
 
 PostOperation {
     // Runtime output for graph plot
@@ -221,12 +221,12 @@ PostOperation {
         EndIf
         Operation{
             Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
-            Print[ bsVal[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied field [T]"] ;
-            Print[ m_avg_y_tesla[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Avg. magnetization [T]"] ;
-            Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/2Joule loss [W]"] ;
+            Print[ I, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied current [A]"] ;
+            Print[ V, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/2Tension [Vm^-1]"] ;
+            Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/3Joule loss [W]"] ;
         }
     }
-    { Name MagDyn; LastTimeStepOnly realTimeSolution ;
+    { Name MagDyn;LastTimeStepOnly realTimeSolution ;
         If(formulation == h_formulation)
             NameOfPostProcessing MagDyn_htot;
         ElseIf(formulation == a_formulation)
@@ -243,19 +243,17 @@ PostOperation {
                     Print[ ur, OnElementsOf OmegaC , File "res/ur.pos", Name "ur [V/m]" ];
                 EndIf
                 Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [A/m2]" ];
-                Print[ jz, OnElementsOf OmegaC , File "res/jz.pos", Name "jz [A/m2]" ];
+                Print[ jz, OnElementsOf OmegaC , File "res/jz.pos", Name "j [A/m2]" ];
                 Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [V/m]" ];
                 Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [A/m]" ];
                 Print[ b, OnElementsOf Omega , File "res/b.pos", Name "b [T]" ];
             EndIf
-            Print[ m_avg[OmegaC], OnRegion OmegaC, Format TimeTable, File outputMagnetization];
             Print[ j, OnLine{{List[controlPoint1]}{List[controlPoint2]}} {savedPoints},
                 Format TimeTable, File outputCurrent];
             Print[ b, OnLine{{List[controlPoint1]}{List[controlPoint2]}} {savedPoints},
                 Format TimeTable, File outputMagInduction1];
             Print[ b, OnLine{{List[controlPoint3]}{List[controlPoint4]}} {savedPoints},
                 Format TimeTable, File outputMagInduction2];
-            Print[ hsVal[Omega], OnRegion Omega, Format TimeTable, File outputAppliedField];
         }
     }
 }
