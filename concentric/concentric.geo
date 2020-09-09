@@ -105,3 +105,11 @@ Physical Surface("Fe 2nd", FE2) = {43};
 Physical Surface("Super Conductor", SU) = {44};
 Physical Surface("Fe 1st", FE1) = {45};
 Physical Surface("Cu", CU) = {46};
+
+Physical Line("Exterior boundary", SURF_OUT) = {30};
+Physical Line("Super conductor domain outer boundary", BND_SU_OUTER) = {34};
+Physical Line("Super conductor domain inner boundary", BND_SU_INNER) = {35};
+
+Physical Point("Arbitrary Point", ARBITRARY_POINT) = {2};
+
+Cohomology(1){{AIR,AIR_OUT,CUNI,FE2},{}};
