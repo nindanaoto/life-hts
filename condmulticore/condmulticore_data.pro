@@ -1,0 +1,35 @@
+// ---- Geometry parameters ----
+DefineConstant[
+changeGeometry = {0, Choices{0,1}, Name "Input/1Geometry/1Show geometry?"},
+R_wire = {0.000337, Visible changeGeometry, Name "Input/1Geometry/Wire radius (m)"}, // Wire radius [m]
+R_CuNi = {0.000322, Visible changeGeometry, Name "Input/1Geometry/CuNi radius (m)"}, // Cu-Ni inner radius [m]
+R_Su_Outer = {0.000261, Visible changeGeometry, Name "Input/1Geometry/Su outer radius (m)"}, // Fe2 inner radius [m]
+R_Su_Inner = {0.000216, Visible changeGeometry, Name "Input/1Geometry/Su inner radius (m)"}, // Su inner radius [m]
+R_Fe = {0.000157, Visible changeGeometry, Name "Input/1Geometry/Fe radius (m)"}, // Fe1 inner radius [m]
+R_inf = {0.001, Visible changeGeometry, Name "Input/1Geometry/Outer radius (m)"}, // Outer shell radius [m]
+R_air = {0.0007, Max R_inf, Visible changeGeometry, Name "Input/1Geometry/Inner radius (m)"}, // Inner shell radius [m]
+Angle_Su = {0.55, Visible changeGeometry, Name "Input/1Geometry/Su angle (rad)"}, //Angle of Su block [rad]
+ConductingMatrix = {1},
+meshLayerWidthTape = {0.001} // Width of the control mesh layer around the cylinder
+];
+
+// ---- Mesh parameters ----
+DefineConstant [meshMult = {0.03, Name "Input/2Mesh/1Mesh size multiplier (-)"}]; // Multiplier [-] of a default mesh size distribution
+
+// ---- Constant definition for regions ----
+AIR = 1000;
+INF = 2000;
+MATRIX = 3000;
+FILAMENT0 = 23000;
+FILAMENT1 = 23001;
+FILAMENT2 = 23002;
+FILAMENT3 = 23003;
+FILAMENT4 = 23004;
+FILAMENT5 = 23005;
+FILAMENT6 = 23006;
+FILAMENT7 = 23007;
+FILAMENT8 = 23008;
+FILAMENT9 = 23009;
+BND_FILAMENT = 25001;
+BND_MATRIX = 25002;
+CUT = 25003;

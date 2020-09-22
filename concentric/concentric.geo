@@ -5,7 +5,7 @@ Include "concentric_data.pro";
 // Interactive settings
 //R = W/2; // Radius
 // Mesh size
-DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
+DefineConstant [meshFactor = {30, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
@@ -106,9 +106,9 @@ Physical Surface("Super Conductor", SU) = {44};
 Physical Surface("Fe 1st", FE1) = {45};
 Physical Surface("Cu", CU) = {46};
 
-Physical Line("Exterior boundary", SURF_OUT) = {30};
-Physical Line("Super conductor domain outer boundary", BND_SU_OUTER) = {34};
-Physical Line("Super conductor domain inner boundary", BND_SU_INNER) = {35};
+Physical Line("Exterior boundary", SURF_OUT) = {6, 8, 2, 4};
+Physical Line("Super conductor domain outer boundary", BND_SU_OUTER) = {17, 18, 19, 20};
+Physical Line("Super conductor domain inner boundary", BND_SU_INNER) = {21, 22, 23, 24};
 
 Physical Point("Arbitrary Point", ARBITRARY_POINT) = {2};
 

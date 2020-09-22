@@ -26,6 +26,7 @@ resOld/
 *.asv
 *.eps
 *h.gch
+*.mpg
 test.*
 .DS_Store
 !CMakeLists.txt

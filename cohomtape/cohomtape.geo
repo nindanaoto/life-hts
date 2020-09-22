@@ -195,11 +195,11 @@ Physical Surface("Air", AIR) = {40, 41, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59};
 Physical Surface("Spherical shell", AIR_OUT) = {30, 31};
 Physical Surface("Cylinder", MATERIAL) = {60, 70};
 Physical Line("Exterior boundary", SURF_OUT) = {2, 4, 6, 8};
-Physical Line("Symmetry line", SURF_SYM) = {};
+// Physical Line("Symmetry line", SURF_SYM) = {};
 Physical Line("Conducting domain boundary", BND_MATERIAL) = {11, 12, 13, 14, 15, 16};
-Physical Line("Shells common line", SURF_SHELL) = {1, 3, 5, 7};
-Physical Line("Symmetry line material", SURF_SYM_MAT) = {};
-Physical Line("Positive side of bnds", BND_MATERIAL_SIDE) = {13};
+// Physical Line("Shells common line", SURF_SHELL) = {1, 3, 5, 7};
+// Physical Line("Symmetry line material", SURF_SYM_MAT) = {};
+// Physical Line("Positive side of bnds", BND_MATERIAL_SIDE) = {13};
 Physical Point("Arbitrary Point", ARBITRARY_POINT) = {2};
 
 Physical Surface("Right", RIGHT) = {2,4,101,301,300,200,100,302,102};

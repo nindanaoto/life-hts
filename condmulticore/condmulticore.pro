@@ -1,27 +1,16 @@
-Include "pall_data.pro";
+Include "condmulticore_data.pro";
 
 Group {
   Air = Region[AIR];
   AirInf = Region[INF];
   Matrix = Region[MATRIX];
   BndMatrix = Region[BND_MATRIX];
-  Filaments = Region[{FILAMENT}];
-  BndFilaments = Region[{BND_FILAMENT}];
+  Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
 
-  If(ConductingMatrix)
-    OmegaC = Region[{Matrix, Filaments}]; // conducting domain
-    OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
-    BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
-    Cut = Region[CUT]; // thick cut
-  Else
-    If(NbrRegions[Filaments] > 1)
-      Error("Non conducting matrix case only coded for single filament!");
-    EndIf
-    OmegaC = Region[{Filaments}]; // conducting domain
-    OmegaCC = Region[{Air, AirInf,Matrix}]; // non-conducting domain
-    BndOmegaC = Region[BndFilaments]; // boundary of conducting domain
-    Cut = Region[CUT]; // FIXME: handle multiple cuts if multiple filaments
-  EndIf
+  OmegaC = Region[{Matrix, Filaments}]; // conducting domain
+  OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
+  BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
+  Cut = Region[CUT]; // thick cut
   Omega = Region[{OmegaC, OmegaCC}]; // full domain
 }
 
@@ -80,7 +69,7 @@ Function {
 Jacobian {
   { Name Vol ;
     Case {
-      { Region AirInf ; Jacobian VolCylShell{AirRadius, InfRadius} ; }
+      { Region AirInf ; Jacobian VolCylShell{R_air, R_inf} ; }
       { Region All ; Jacobian Vol ; }
     }
   }

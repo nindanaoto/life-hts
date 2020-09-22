@@ -202,11 +202,7 @@ Physical Line("Symmetry line material", SURF_SYM_MAT) = {};
 Physical Line("Positive side of bnds", BND_MATERIAL_SIDE) = {13};
 Physical Point("Arbitrary Point", ARBITRARY_POINT) = {2};
 
-Physical Surface("Right", RIGHT) = {2,4,101,301,300,200,100,302,102};
-Physical Surface("Left", LEFT) = {6,8,101,301,300,200,100,302,102};
-Physical Line("Right Exterior boundary", RIGHT_SURF_OUT) = {6};
-
-Cohomology(1){{AIR,AIR_OUT}, {RIGHT_SURF_OUT}};
+Cohomology(1){{AIR,AIR_OUT}, {}};
 
 
 //Mesh.Algorithm = 1;
