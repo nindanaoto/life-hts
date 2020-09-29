@@ -1,6 +1,6 @@
-SetFactory("OpenCASCADE");
+// SetFactory("OpenCASCADE");
 // Include cross data
-Include "ferromulticore_data.pro";
+Include "3dmulticore_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -14,6 +14,8 @@ DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 DefineConstant [NumCore = 10];
 DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
+DefineConstant [SliceAngle = 2*Pi/NumCore];
+DefineConstant [SlicePitch = Pitch/NumCore];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
 
@@ -93,23 +95,53 @@ For i In {0:(NumCore-1)}
 EndFor
 
 //Fe
-fep0 = newp; Point(fep0) = {0, -R_Fe, 0, LcCyl};
-fep1 = newp; Point(fep1) = {R_Fe, 0, 0, LcCyl};
-fep2 = newp; Point(fep2) = {0, R_Fe, 0, LcCyl};
-fep3 = newp; Point(fep3) = {-R_Fe, 0, 0, LcCyl};
+feinps[] = {};
+feoutps[] = {};
+For i In {0:(NumCore-1)}
+    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feoutps[] += feoutp~{i};
+    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feinps[] += feinp~{i};
+EndFor
 
-fel0 = newl; Circle(fel0) = {fep0, centerp, fep1};
-fel1 = newl; Circle(fel1) = {fep1, centerp, fep2};
-fel2 = newl; Circle(fel2) = {fep2, centerp, fep3};
-fel3 = newl; Circle(fel3) = {fep3, centerp, fep0};
 
-fell = newll; Line Loop(fell) = {fel0, fel1, fel2, fel3};
+fels[] = {};
+For i In {0:(NumCore-2)}
+    fel~{i} = newl; Spline(fel~{i}) = {feoutp~{i}, feinp~{i},feoutp~{i+1}};
+    fels[] += fel~{i};
+EndFor
+
+fel~{NumCore-1} = newl; Spline(fel~{NumCore-1}) = {feoutp~{NumCore-1}, feinp~{NumCore-1},feoutp~{0}};
+fels[] += fel~{i};
+
+fell = newll; Line Loop(fell) = {fels[]};
 
 infs = news; Plane Surface(infs) = {infll,airll}; //AIR_OUT
 airs = news; Plane Surface(airs) = {airll,wirell}; //AIR
 cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
 cus = news; Plane Surface(cus) = {fell}; //CU
+
+suends[] = {};
+subodys[] = {};
+For i In {0:(NumCore-1)}
+    suout~{i}[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};};
+    suends[] += suout~{i}[0];
+    subodys[] += suout~{i}[1];
+    affinecos = Cos(SliceAngle);
+    affinesin = Sin(SliceAngle);
+    affinetx = R_Su_Outer*(Cos((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Cos((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
+    affinety = R_Su_Outer*(Sin((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Sin((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
+    affinetz = 2*SlicePitch;
+    // Affine{affinecos,-affinesin,0,affinecos*affinetx-affinesin*affinety,affinesin,affinecos,0,affinesin*affinetx+affinecos*affinety,0,0,1,affinetz}{Surface {sus~{i}};}
+    // Periodic Surface {suout~{i}[0]} = {sus~{i}} Affine{affinecos,-affinesin,0,affinecos*affinetx-affinesin*affinety,affinesin,affinecos,0,affinesin*affinetx+affinecos*affinety,0,0,1,affinetz};
+    Periodic Surface {suout~{i}[0]} = {sus~{i}} Translate{0,0,SlicePitch} Rotate{{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle};
+EndFor
+feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
+cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
+infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
+airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
+cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
 
 Physical Surface("Spherical shell", INF) = {infs};
 Physical Surface("Air", AIR) = {airs};
@@ -120,3 +152,5 @@ Physical Surface("Cupper", CU) = {cus};
 Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
 
 Cohomology(1){{AIR,INF},{}};
+
+Geometry.NumSubEdges = 1000;

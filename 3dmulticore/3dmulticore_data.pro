@@ -1,6 +1,7 @@
 // ---- Geometry parameters ----
 DefineConstant[
 changeGeometry = {0, Choices{0,1}, Name "Input/1Geometry/1Show geometry?"},
+Pitch = {2e-3, Visible changeGeometry, Name "Input/1Geometry/Twist pitch (m)"},
 R_wire = {0.000337, Visible changeGeometry, Name "Input/1Geometry/Wire radius (m)"}, 
 R_CuNi = {0.000322, Visible changeGeometry, Name "Input/1Geometry/CuNi radius (m)"}, 
 R_Su_Outer = {0.000261, Visible changeGeometry, Name "Input/1Geometry/Su outer radius (m)"}, 
