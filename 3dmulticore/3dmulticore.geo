@@ -91,7 +91,6 @@ For i In {0:(NumCore-1)}
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
-    Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
 EndFor
 
 //Fe
@@ -124,6 +123,7 @@ cus = news; Plane Surface(cus) = {fell}; //CU
 
 suends[] = {};
 subodys[] = {};
+//Periodic is forced by Extrude
 For i In {0:(NumCore-1)}
     suout~{i}[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};};
     suends[] += suout~{i}[0];
@@ -133,23 +133,22 @@ For i In {0:(NumCore-1)}
     affinetx = R_Su_Outer*(Cos((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Cos((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
     affinety = R_Su_Outer*(Sin((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Sin((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
     affinetz = 2*SlicePitch;
-    // Affine{affinecos,-affinesin,0,affinecos*affinetx-affinesin*affinety,affinesin,affinecos,0,affinesin*affinetx+affinecos*affinety,0,0,1,affinetz}{Surface {sus~{i}};}
-    // Periodic Surface {suout~{i}[0]} = {sus~{i}} Affine{affinecos,-affinesin,0,affinecos*affinetx-affinesin*affinety,affinesin,affinecos,0,affinesin*affinetx+affinecos*affinety,0,0,1,affinetz};
-    Periodic Surface {suout~{i}[0]} = {sus~{i}} Translate{0,0,SlicePitch} Rotate{{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle};
+    Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
 EndFor
-feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
-cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
 infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
 airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
 cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
+feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
+cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
 
-Physical Surface("Spherical shell", INF) = {infs};
-Physical Surface("Air", AIR) = {airs};
-Physical Surface("Ferrium", FE) = {cunis,fes};
-Physical Surface("Cupper", CU) = {cus};
+Physical Volume("Spherical shell", INF) = {infout[1]};
+Physical Volume("Air", AIR) = {airout[1]};
+Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
+Physical Volume("Cupper", CU) = {cuout[1]};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
-Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
+Printf("boundary surface = %g", cuniout[2]);
+Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
 
 Cohomology(1){{AIR,INF},{}};
 
