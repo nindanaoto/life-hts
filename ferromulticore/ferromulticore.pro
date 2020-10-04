@@ -204,7 +204,8 @@ Resolution {
     }
     Operation {
       //options for PETsC
-      SetGlobalSolverOptions["-ksp_type bcgsl"];
+      // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
+      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];  
 
       // create directory to store result files
       CreateDirectory["res"];
