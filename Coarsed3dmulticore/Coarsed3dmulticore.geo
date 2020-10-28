@@ -1,6 +1,6 @@
 // SetFactory("OpenCASCADE");
 // Include cross data
-Include "3dmulticore_data.pro";
+Include "Coarsed3dmulticore_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -9,6 +9,7 @@ DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infini
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
+DefineConstant [LcFe = meshFactor/2*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
@@ -17,7 +18,7 @@ DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
 DefineConstant [SliceAngle = 2*Pi/NumCore];
 DefineConstant [SlicePitch = Pitch/NumCore];
 
-centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
+centerp = newp; Point(centerp) = {0, 0, 0, LcAir};
 
 //Outer Shell
 infp0 = newp; Point(infp0) = {0, -R_inf, 0, LcInf};
@@ -46,10 +47,10 @@ airl3 = newl; Circle(airl3) = {airp3, centerp, airp0};
 airll = newll; Line Loop(airll) = {airl0, airl1, airl2, airl3};
 
 //Wire
-wirep0 = newp; Point(wirep0) = {0, -R_wire, 0, LcCyl};
-wirep1 = newp; Point(wirep1) = {R_wire, 0, 0, LcCyl};
-wirep2 = newp; Point(wirep2) = {0, R_wire, 0, LcCyl};
-wirep3 = newp; Point(wirep3) = {-R_wire, 0, 0, LcCyl};
+wirep0 = newp; Point(wirep0) = {0, -R_wire, 0, LcAir};
+wirep1 = newp; Point(wirep1) = {R_wire, 0, 0, LcAir};
+wirep2 = newp; Point(wirep2) = {0, R_wire, 0, LcAir};
+wirep3 = newp; Point(wirep3) = {-R_wire, 0, 0, LcAir};
 
 wirel0 = newl; Circle(wirel0) = {wirep0, centerp, wirep1};
 wirel1 = newl; Circle(wirel1) = {wirep1, centerp, wirep2};
@@ -59,10 +60,10 @@ wirel3 = newl; Circle(wirel3) = {wirep3, centerp, wirep0};
 wirell = newll; Line Loop(wirell) = {wirel0, wirel1, wirel2, wirel3}; 
 
 //Cu-Ni
-cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcCyl};
-cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcCyl};
-cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcCyl};
-cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcCyl};
+cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcFe};
+cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcFe};
+cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcFe};
+cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcFe};
 
 cunil0 = newl; Circle(cunil0) = {cunip0, centerp, cunip1};
 cunil1 = newl; Circle(cunil1) = {cunip1, centerp, cunip2};
@@ -73,6 +74,7 @@ cunill = newll; Line Loop(cunill) = {cunil0, cunil1, cunil2, cunil3};
 
 // Su cores
 sulls[] = {}; //line loops of filaments
+suss[] = {};
 For i In {0:(NumCore-1)}
     sup0~{i} = newp; Point(sup0~{i}) = {R_Su_Outer*Cos((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su), R_Su_Outer*Sin((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su), 0, LcCyl};
     sup1~{i} = newp; Point(sup1~{i}) = {(R_Su_Outer-Outer_Depression)*Cos((2 * i + 1)*CoreGapAngle/2 + (i + 1/2) * Angle_Su), (R_Su_Outer-Outer_Depression)*Sin((2 * i + 1)*CoreGapAngle/2 + (i + 1/2) * Angle_Su), 0, LcCyl};
@@ -90,6 +92,7 @@ For i In {0:(NumCore-1)}
     sulls[] += sull~{i};
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
+    suss[] += sus~{i};
 
 EndFor
 
@@ -97,9 +100,9 @@ EndFor
 feinps[] = {};
 feoutps[] = {};
 For i In {0:(NumCore-1)}
-    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcAir};
     feoutps[] += feoutp~{i};
-    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcAir};
     feinps[] += feinp~{i};
 EndFor
 
@@ -123,9 +126,8 @@ cus = news; Plane Surface(cus) = {fell}; //CU
 
 suends[] = {};
 subodys[] = {};
-//Periodic is forced by Extrude
 For i In {0:(NumCore-1)}
-    suout~{i}[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};};
+    suout~{i}[] =  Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};}; 
     suends[] += suout~{i}[0];
     subodys[] += suout~{i}[1];
     affinecos = Cos(SliceAngle);
@@ -141,6 +143,8 @@ cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
 feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
 cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
 
+Periodic Surface{infout[0],airout[0],cuniout[0]} =  {infs,airs,cunis}Translate{0,0,SlicePitch};
+
 Physical Volume("Spherical shell", INF) = {infout[1]};
 Physical Volume("Air", AIR) = {airout[1]};
 Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
@@ -151,17 +155,3 @@ Printf("boundary surface = %g", cuniout[2]);
 Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
 
 Cohomology(1){{AIR,INF},{}};
-
-Geometry.NumSubEdges = 1000;
-//+
-Show "*";
-//+
-Hide {
-Point{24,26,27,29,30,32,33,35,36,38,39,41,42,44,45,47,48,50,51,53,54,56,57,59,60,62,63,65,66,68,69,71,72,74,75,77,159,161,165,170,220,222,226,231,281,283,287,292,342,344,348,353,403,405,409,414,464,466,470,475,525,527,531,536,586,588,592,597,647,649,653,658};
-Curve{27,28,29,30,33,34,35,36,39,40,41,42,45,46,47,48,51,52,53,54,57,58,59,60,63,64,65,66,69,70,71,72,75,76,77,78,23002,23003,23004,23005,23007,23008,23012,23016,23024,23025,23026,23027,23029,23030,23034,23038,23046,23047,23048,23049,23051,23052,23056,23060,23068,23069,23070,23071,23073,23074,23078,23082,23090,23091,23092,23093,23095,23096,23100,23104,23112,23113,23114,23115,23117,23118,23122,23126,23134,23135,23136,23137,23139,23140,23144,23148,23156,23157,23158,23159,23161,23162,23166,23170,23178,23179,23180,23181,23183,23184,23188,23192};
-Surface{32,38,44,50,56,62,68,74,80,23009,23013,23017,23021,23022,23031,23035,23039,23043,23044,23053,23057,23061,23065,23066,23075,23079,23083,23087,23088,23097,23101,23105,23109,23110,23119,23123,23127,23131,23132,23141,23145,23149,23153,23154,23163,23167,23171,23175,23176,23185,23189,23193,23197,23198};
-Volume{2,3,4,5,6,7,8,9,10};
-}
-
-//+
-Show "*";

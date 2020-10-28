@@ -1,4 +1,4 @@
-Include "3dmulticore_data.pro";
+Include "constferromulticore_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -53,14 +53,16 @@ Function {
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
     iter_max = {100,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
-    visu = {0, Choices{0, 1}, AutoCheck 0,
+    visu = {1, Choices{0, 1}, AutoCheck 0,
       Name "Input/Solver/Visu", Label "Real-time visualization"},
     m0 = {1.04e6,
       Name "Input/Solver/Magnetic field at saturation"},
     mur0 = {1700.0,
       Name "Input/Solver/Relative permeability at low fields"},
     epsMu = {1e-15,
-      Name "Input/Solver/numerical epsiron of mu"}
+      Name "Input/Solver/numerical epsiron of mu"},
+    Flag_NR = {0,
+      Name "Input/Solver/Newton Raphson Flag"}
   ];
 
   dt_max = adaptive ? dt_max : dt;
@@ -77,10 +79,7 @@ Function {
       Tensor[CompX[$1]^2, CompX[$1] * CompY[$1], CompX[$1] * CompZ[$1],
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
-  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = ($iter > 20) ? ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
-    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])) :
-    (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique
+  mu[MagnAnhyDomain] = mur0*mu0;
 }
 
 Jacobian {
@@ -170,14 +169,21 @@ Formulation {
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
       
-      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      If(Flag_NR)
+        Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Else
+        Galerkin { [ mu[{h}] * Dof{h} / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      EndIf
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
@@ -204,10 +210,11 @@ Resolution {
     }
     Operation {
       //options for PETsC
-      // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
+      SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // SetGlobalSolverOptions["-ksp_type bcgsl"];
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
 
       // create directory to store result files
       CreateDirectory["res"];
@@ -216,11 +223,11 @@ Resolution {
       // compare the performance of adaptive vs. non-adaptive time stepping
       // scheme)
       Evaluate[ $syscount = 0 ];
+
+      Evaluate[$iter = 0];
       
       // initialize relaxation factor
       Evaluate[$relaxFactor = 1];
-
-      Evaluate[$iter = 0];
 
       // initialize the solution (initial condition)
       InitSolution[A];

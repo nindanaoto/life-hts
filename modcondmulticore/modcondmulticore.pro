@@ -1,17 +1,13 @@
-Include "3dmulticore_data.pro";
+Include "modcondmulticore_data.pro";
 
 Group {
   Air = Region[AIR];
   AirInf = Region[INF];
-  LinOmegaC = Region[{CU,FE}];
-  BndMatrix = Region[BND_WIRE];
+  Matrix = Region[MATRIX];
+  BndMatrix = Region[BND_MATRIX];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
-  MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
-  Ferrite = Region[FE];
-  Copper = Region[CU];
 
-  OmegaC = Region[{LinOmegaC,Filaments}]; // conducting domain
+  OmegaC = Region[{Matrix, Filaments}]; // conducting domain
   OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
   BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   Cut = Region[CUT]; // thick cut
@@ -22,11 +18,9 @@ Function {
   mu0 = 4*Pi*1e-7; // [Hm⁻¹]
 
   DefineConstant[
-    cusigma = {6e7,
-      Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
-    fesigma = {1e7,
-      Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {7, Step 100,
+    sigmaMatrix = {6e7, Min 1e3, Max 6e7, Step 1e3, Visible ConductingMatrix,
+      Name "Input/4Materials/Matrix conductivity [Sm⁻¹]"},
+    Itot = {5, Step 100,
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-4,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
@@ -41,7 +35,7 @@ Function {
       Name "Input/Solver/0Periods to simulate"},
     time0 = 0, // initial time
     time1 = periods * (1 / Freq), // final time
-    dt = {2e-4, Min 1e-7, Max 1e-3, Step 1e-6,
+    dt = {5e-5, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
     adaptive = {0, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
@@ -51,23 +45,16 @@ Function {
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
-    iter_max = {100,
+    iter_max = {12,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
-    visu = {0, Choices{0, 1}, AutoCheck 0,
-      Name "Input/Solver/Visu", Label "Real-time visualization"},
-    m0 = {1.04e6,
-      Name "Input/Solver/Magnetic field at saturation"},
-    mur0 = {1700.0,
-      Name "Input/Solver/Relative permeability at low fields"},
-    epsMu = {1e-15,
-      Name "Input/Solver/numerical epsiron of mu"}
+    visu = {1, Choices{0, 1}, AutoCheck 0,
+      Name "Input/Solver/Visu", Label "Real-time visualization"}
   ];
 
   dt_max = adaptive ? dt_max : dt;
 
-  mu[MagnLinDomain] =  mu0;
-  rho[Ferrite] = 1 / fesigma;
-  rho[Copper] = 1 / cusigma;
+  mu[Omega] =  mu0;
+  rho[Matrix] = 1 / sigmaMatrix;
 
   // power law E(J) = rho(J) * J, with rho(j) = Ec/Jc * (|J|/Jc)^(n-1)
   rho[Filaments] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
@@ -77,10 +64,6 @@ Function {
       Tensor[CompX[$1]^2, CompX[$1] * CompY[$1], CompX[$1] * CompZ[$1],
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
-  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = ($iter > 20) ? ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
-    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])) :
-    (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique
 }
 
 Jacobian {
@@ -168,22 +151,13 @@ Formulation {
       //     - (dEdJ(curl h_k-1) curl h_k-1, curl h')
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
-        In MagnLinDomain; Integration Int; Jacobian Vol;  }
-      
-      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        In Omega; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
 
       Galerkin { [ rho[] * Dof{d h} , {d h} ];
-        In LinOmegaC; Integration Int; Jacobian Vol;  }
+        In Matrix; Integration Int; Jacobian Vol;  }
 
       Galerkin { [ rho[{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
@@ -203,12 +177,6 @@ Resolution {
       { Name A; NameOfFormulation MagDynH; }
     }
     Operation {
-      //options for PETsC
-      // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
-      // SetGlobalSolverOptions["-ksp_type bcgsl"];
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
-
       // create directory to store result files
       CreateDirectory["res"];
 
@@ -216,11 +184,6 @@ Resolution {
       // compare the performance of adaptive vs. non-adaptive time stepping
       // scheme)
       Evaluate[ $syscount = 0 ];
-      
-      // initialize relaxation factor
-      Evaluate[$relaxFactor = 1];
-
-      Evaluate[$iter = 0];
 
       // initialize the solution (initial condition)
       InitSolution[A];
@@ -313,7 +276,7 @@ PostOperation {
         File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
       Print[ Losses[Filaments], OnGlobal, Format TimeTable,
         File > "res/losses_filaments.txt"] ;
-      Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
+      Print[ Losses[Matrix], OnGlobal, Format TimeTable,
         File > "res/losses_matrix.txt"] ;
       Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
       Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];

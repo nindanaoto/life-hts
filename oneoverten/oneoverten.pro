@@ -1,11 +1,10 @@
-Include "3dmulticore_data.pro";
+Include "oneoverten_data.pro";
 
 Group {
   Air = Region[AIR];
   AirInf = Region[INF];
   LinOmegaC = Region[{CU,FE}];
-  BndMatrix = Region[BND_WIRE];
-  Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
+  Filaments = Region[{SU}];
   MagnAnhyDomain = Region[FE];
   MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
   Ferrite = Region[FE];
@@ -13,8 +12,8 @@ Group {
 
   OmegaC = Region[{LinOmegaC,Filaments}]; // conducting domain
   OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
-  BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   Cut = Region[CUT]; // thick cut
+  BndOmegaC = Region[BND_WIRE]; // boundary of conducting domain
   Omega = Region[{OmegaC, OmegaCC}]; // full domain
 }
 
@@ -60,7 +59,9 @@ Function {
     mur0 = {1700.0,
       Name "Input/Solver/Relative permeability at low fields"},
     epsMu = {1e-15,
-      Name "Input/Solver/numerical epsiron of mu"}
+      Name "Input/Solver/numerical epsiron of mu"},
+    Flag_NR = {0,
+      Name "Input/Solver/Newton Raphson Flag"}
   ];
 
   dt_max = adaptive ? dt_max : dt;
@@ -170,14 +171,21 @@ Formulation {
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
       
-      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      If(Flag_NR)
+        Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Else
+        Galerkin { [ mu[{h}] * Dof{h} / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+        Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+          In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      EndIf
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
@@ -205,9 +213,14 @@ Resolution {
     Operation {
       //options for PETsC
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
-      // SetGlobalSolverOptions["-ksp_type bcgsl"];
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
       SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -dm_vec_type cuda"];  
+      // SetGlobalSolverOptions["-ksp_type bcgsl"];
+      // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
       // create directory to store result files
       CreateDirectory["res"];
@@ -216,11 +229,11 @@ Resolution {
       // compare the performance of adaptive vs. non-adaptive time stepping
       // scheme)
       Evaluate[ $syscount = 0 ];
+
+      Evaluate[$iter = 0];
       
       // initialize relaxation factor
       Evaluate[$relaxFactor = 1];
-
-      Evaluate[$iter = 0];
 
       // initialize the solution (initial condition)
       InitSolution[A];

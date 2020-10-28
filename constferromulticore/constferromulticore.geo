@@ -1,6 +1,6 @@
-// SetFactory("OpenCASCADE");
+SetFactory("OpenCASCADE");
 // Include cross data
-Include "3dmulticore_data.pro";
+Include "constferromulticore_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -14,8 +14,6 @@ DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 DefineConstant [NumCore = 10];
 DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
-DefineConstant [SliceAngle = 2*Pi/NumCore];
-DefineConstant [SlicePitch = Pitch/NumCore];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
 
@@ -91,6 +89,7 @@ For i In {0:(NumCore-1)}
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
+    Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
 EndFor
 
 //Fe
@@ -121,47 +120,12 @@ cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
 cus = news; Plane Surface(cus) = {fell}; //CU
 
-suends[] = {};
-subodys[] = {};
-//Periodic is forced by Extrude
-For i In {0:(NumCore-1)}
-    suout~{i}[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};};
-    suends[] += suout~{i}[0];
-    subodys[] += suout~{i}[1];
-    affinecos = Cos(SliceAngle);
-    affinesin = Sin(SliceAngle);
-    affinetx = R_Su_Outer*(Cos((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Cos((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
-    affinety = R_Su_Outer*(Sin((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Sin((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
-    affinetz = 2*SlicePitch;
-    Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
-EndFor
-infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
-airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
-cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
-feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
-cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
-
-Physical Volume("Spherical shell", INF) = {infout[1]};
-Physical Volume("Air", AIR) = {airout[1]};
-Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
-Physical Volume("Cupper", CU) = {cuout[1]};
+Physical Surface("Spherical shell", INF) = {infs};
+Physical Surface("Air", AIR) = {airs};
+Physical Surface("Ferrium", FE) = {cunis,fes};
+Physical Surface("Cupper", CU) = {cus};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
-Printf("boundary surface = %g", cuniout[2]);
-Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
+Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
 
 Cohomology(1){{AIR,INF},{}};
-
-Geometry.NumSubEdges = 1000;
-//+
-Show "*";
-//+
-Hide {
-Point{24,26,27,29,30,32,33,35,36,38,39,41,42,44,45,47,48,50,51,53,54,56,57,59,60,62,63,65,66,68,69,71,72,74,75,77,159,161,165,170,220,222,226,231,281,283,287,292,342,344,348,353,403,405,409,414,464,466,470,475,525,527,531,536,586,588,592,597,647,649,653,658};
-Curve{27,28,29,30,33,34,35,36,39,40,41,42,45,46,47,48,51,52,53,54,57,58,59,60,63,64,65,66,69,70,71,72,75,76,77,78,23002,23003,23004,23005,23007,23008,23012,23016,23024,23025,23026,23027,23029,23030,23034,23038,23046,23047,23048,23049,23051,23052,23056,23060,23068,23069,23070,23071,23073,23074,23078,23082,23090,23091,23092,23093,23095,23096,23100,23104,23112,23113,23114,23115,23117,23118,23122,23126,23134,23135,23136,23137,23139,23140,23144,23148,23156,23157,23158,23159,23161,23162,23166,23170,23178,23179,23180,23181,23183,23184,23188,23192};
-Surface{32,38,44,50,56,62,68,74,80,23009,23013,23017,23021,23022,23031,23035,23039,23043,23044,23053,23057,23061,23065,23066,23075,23079,23083,23087,23088,23097,23101,23105,23109,23110,23119,23123,23127,23131,23132,23141,23145,23149,23153,23154,23163,23167,23171,23175,23176,23185,23189,23193,23197,23198};
-Volume{2,3,4,5,6,7,8,9,10};
-}
-
-//+
-Show "*";

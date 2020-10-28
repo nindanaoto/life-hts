@@ -1,4 +1,4 @@
-Include "3dmulticore_data.pro";
+Include "Coarsed3dmulticore_data.pro";
 
 Group {
   Air = Region[AIR];
