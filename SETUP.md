@@ -45,7 +45,7 @@ mkl
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_mkl
-./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --downlad-hypre --download-hpddm --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
 make
 ```
 
@@ -71,7 +71,7 @@ cd ../getdp
 rm -r bin
 mkdir bin
 cd bin
-cmake -DENABLE_MPI=1 -DENABLE_BLAS_LAPACK=0 ..
+cmake -DENABLE_MPI=1  -DENABLE_OPENMP=1 -DENABLE_BLAS_LAPACK=0 ..
 ```
 
 strumpack-bump
@@ -90,7 +90,7 @@ strumpack-bump-cuda
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_strumpack_cuda
-./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-metis --download-strumpack --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3"
+./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-metis --download-parmetis --download-ptscotch --download-scalapack --download-strumpack --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl"
 cd ../slepc
 export SLEPC_DIR=$PWD
 ./configure
@@ -106,7 +106,7 @@ suite-sparse-cuda
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_suitesparse_cuda
-./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-metis --download-parmetis --download-suitesparse --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3"
+./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-metis --download-suitesparse --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3"
 make
 cd ../slepc
 export SLEPC_DIR=$PWD
@@ -117,4 +117,19 @@ rm -r bin
 mkdir bin
 cd bin
 cmake -DENABLE_MPI=1 -DENABLE_BLAS_LAPACK=0 ..
+```
+
+PaStiX
+```
+cmake .. -DSCOTCH_DIR=/usr/lib/x86_64-linux-gnu/scotch-int64/ -DSCOTCH_INCDIR=/usr/include/scotch-int64 
+export PETSC_DIR=$PWD
+export PETSC_ARCH=real_pastix
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi --with-pastix-dir="~/sources/pastix/build" --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3" --with-blaslapack-dir="~/intel/mkl"
+```
+
+CUDA
+```
+export PETSC_DIR=$PWD
+export PETSC_ARCH=real_cuda
+./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-thrust --with-clanguage=c --download-kokkos --download-kokkos-kernels --with-kokkos-cuda-arch=PASCAL61 --download-hwloc --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3"
 ```

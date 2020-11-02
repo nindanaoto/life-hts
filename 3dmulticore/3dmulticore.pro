@@ -208,6 +208,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type bcgsl"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
       SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];  
 
       // create directory to store result files
       CreateDirectory["res"];

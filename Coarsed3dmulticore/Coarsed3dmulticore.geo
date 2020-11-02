@@ -137,13 +137,11 @@ For i In {0:(NumCore-1)}
     affinetz = 2*SlicePitch;
     Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
 EndFor
-infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
-airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
-cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
+infout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{infs};};
+airout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{airs};};
+cuniout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cunis};};
 feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
 cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
-
-Periodic Surface{infout[0],airout[0],cuniout[0]} =  {infs,airs,cunis}Translate{0,0,SlicePitch};
 
 Physical Volume("Spherical shell", INF) = {infout[1]};
 Physical Volume("Air", AIR) = {airout[1]};
@@ -155,3 +153,15 @@ Printf("boundary surface = %g", cuniout[2]);
 Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
 
 Cohomology(1){{AIR,INF},{}};
+
+Mesh 3;
+
+For i In {0:(NumCore-1)}
+    Periodic Surface {suout~{i}[0]} = {sus~{i}} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+EndFor
+
+Periodic Surface {infout[0]} = {infs} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+Periodic Surface {airout[0]} = {airs} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+Periodic Surface {cuniout[0]} = {cunis} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+Periodic Surface {feout[0]} = {fes} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+Periodic Surface {cuout[0]} = {cus} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};

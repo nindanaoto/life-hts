@@ -218,9 +218,12 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -dm_vec_type cuda"];  
-      // SetGlobalSolverOptions["-ksp_type bcgsl"];
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  
+      // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
+      // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
+      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
+      SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-7"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
       // create directory to store result files
