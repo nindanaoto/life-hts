@@ -1,4 +1,4 @@
-Include "3dmulticore_data.pro";
+Include "doublecoarse_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -207,9 +207,8 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
       // SetGlobalSolverOptions["-ksp_type bcgsl"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"]; 
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
-      SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];
+      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];  
 
       // create directory to store result files
       CreateDirectory["res"];

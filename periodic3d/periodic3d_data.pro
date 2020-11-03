@@ -14,7 +14,11 @@ Outer_Depression = {20e-6, Visible changeGeometry, Name "Input/1Geometry/Oute de
 Inner_Projection = {25e-6, Visible changeGeometry, Name "Input/1Geometry/Inner projection length (m)"}, 
 Fe_Depression = {27e-6, Visible changeGeometry, Name "Input/1Geometry/Ferrite depression length (m)"}
 ConductingMatrix = {1},
-meshLayerWidthTape = {0.001} // Width of the control mesh layer around the cylinder
+meshLayerWidthTape = {0.001}, // Width of the control mesh layer around the cylinder
+NumCore = 10,
+CoreGapAngle = 2*Pi/NumCore - Angle_Su,
+SliceAngle = 2*Pi/NumCore,
+SlicePitch = Pitch/NumCore
 ];
 
 // ---- Mesh parameters ----
@@ -24,6 +28,8 @@ DefineConstant [meshMult = {0.03, Name "Input/2Mesh/1Mesh size multiplier (-)"}]
 AIR = 1000;
 INF = 2000;
 MATRIX = 3000;
+LOWERSURFACE = 3001;
+UPPERSURFACE = 3002;
 FILAMENT0 = 23000;
 FILAMENT1 = 23001;
 FILAMENT2 = 23002;
@@ -37,4 +43,4 @@ FILAMENT9 = 23009;
 FE = 23010;
 CU = 23011;
 BND_WIRE = 25002;
-CUT = 25004;
+CUT = 25003;

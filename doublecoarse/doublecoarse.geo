@@ -1,5 +1,5 @@
 // Include cross data
-Include "3dmulticore_data.pro";
+Include "doublecoarse_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius

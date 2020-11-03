@@ -1,5 +1,6 @@
+// SetFactory("OpenCASCADE");
 // Include cross data
-Include "3dmulticore_data.pro";
+Include "periodic3d_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -11,10 +12,6 @@ DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
-DefineConstant [NumCore = 10];
-DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
-DefineConstant [SliceAngle = 2*Pi/NumCore];
-DefineConstant [SlicePitch = Pitch/NumCore];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
 
@@ -70,6 +67,11 @@ cunil3 = newl; Circle(cunil3) = {cunip3, centerp, cunip0};
 
 cunill = newll; Line Loop(cunill) = {cunil0, cunil1, cunil2, cunil3}; 
 
+infairl0 = newl; Line(infairl0) = {airp0,infp0};
+infairl2 = newl; Line(infairl2) = {airp2,infp2};
+infll0 = newll; Line Loop(infll0) = {infairl0,infl0,infl1,-infairl2,-airl1,-airl0};
+infll2 = newll; Line Loop(infll2) = {infairl2,infl2,infl3,-infairl0,-airl3,-airl2};
+
 // Su cores
 sulls[] = {}; //line loops of filaments
 For i In {0:(NumCore-1)}
@@ -114,7 +116,8 @@ fels[] += fel~{i};
 
 fell = newll; Line Loop(fell) = {fels[]};
 
-infs = news; Plane Surface(infs) = {infll,airll}; //AIR_OUT
+infs0 = news; Plane Surface(infs0) = {infll0}; //AIR_OUT
+infs2 = news; Plane Surface(infs2) = {infll2}; //AIR_OUT
 airs = news; Plane Surface(airs) = {airll,wirell}; //AIR
 cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
@@ -134,13 +137,14 @@ For i In {0:(NumCore-1)}
     affinetz = 2*SlicePitch;
     Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
 EndFor
-infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
-airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
-cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
+infout0[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{infs0};};
+infout2[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{infs2};};
+airout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{airs};};
+cuniout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cunis};};
 feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
 cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
 
-Physical Volume("Spherical shell", INF) = {infout[1]};
+Physical Volume("Spherical shell", INF) = {infout0[1],infout2[1]};
 Physical Volume("Air", AIR) = {airout[1]};
 Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
 Physical Volume("Cupper", CU) = {cuout[1]};
@@ -149,6 +153,20 @@ Physical Volume("Cupper", CU) = {cuout[1]};
 Printf("boundary surface = %g", cuniout[2]);
 Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
 
-Cohomology(1){{AIR,INF},{}};
+lowers[] = {infs0,infs2,airs,cunis,fes,cus};
+uppers[] = {infout0[0],infout2[0],airout[0],cuniout[0],feout[0],cuout[0]};
+For i In {0:(NumCore-1)}
+    lowers[] += sus~{i};
+    uppers[] += suout~{i}[0];
+EndFor
+
+Physical Surface("Lower Surface", LOWERSURFACE) = {lowers[]};
+Physical Surface("Upper Surface", UPPERSURFACE) = {uppers[]};
 
 Geometry.NumSubEdges = 1000;
+
+Mesh 3;
+
+Periodic Surface {uppers[]} = {lowers[]} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
+
+Cohomology(1){{AIR,INF},{}};

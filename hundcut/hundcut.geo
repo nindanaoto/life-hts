@@ -1,6 +1,5 @@
-SetFactory("OpenCASCADE");
 // Include cross data
-Include "OpenCASCADE_data.pro";
+Include "hundcut_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -9,16 +8,13 @@ DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infini
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
-DefineConstant [LcFe = meshFactor/2*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 DefineConstant [NumCore = 10];
 DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
-DefineConstant [SliceAngle = 2*Pi/NumCore];
-DefineConstant [SlicePitch = Pitch/NumCore];
 
-centerp = newp; Point(centerp) = {0, 0, 0, LcAir};
+centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
 
 //Outer Shell
 infp0 = newp; Point(infp0) = {0, -R_inf, 0, LcInf};
@@ -31,8 +27,6 @@ infl1 = newl; Circle(infl1) = {infp1, centerp, infp2};
 infl2 = newl; Circle(infl2) = {infp2, centerp, infp3};
 infl3 = newl; Circle(infl3) = {infp3, centerp, infp0};
 
-infll = newll; Line Loop(infll) = {infl0, infl1, infl2, infl3};
-
 //Air
 airp0 = newp; Point(airp0) = {0, -R_air, 0, LcAir};
 airp1 = newp; Point(airp1) = {R_air, 0, 0, LcAir};
@@ -44,13 +38,11 @@ airl1 = newl; Circle(airl1) = {airp1, centerp, airp2};
 airl2 = newl; Circle(airl2) = {airp2, centerp, airp3};
 airl3 = newl; Circle(airl3) = {airp3, centerp, airp0};
 
-airll = newll; Line Loop(airll) = {airl0, airl1, airl2, airl3};
-
 //Wire
-wirep0 = newp; Point(wirep0) = {0, -R_wire, 0, LcAir};
-wirep1 = newp; Point(wirep1) = {R_wire, 0, 0, LcAir};
-wirep2 = newp; Point(wirep2) = {0, R_wire, 0, LcAir};
-wirep3 = newp; Point(wirep3) = {-R_wire, 0, 0, LcAir};
+wirep0 = newp; Point(wirep0) = {0, -R_wire, 0, LcCyl};
+wirep1 = newp; Point(wirep1) = {R_wire, 0, 0, LcCyl};
+wirep2 = newp; Point(wirep2) = {0, R_wire, 0, LcCyl};
+wirep3 = newp; Point(wirep3) = {-R_wire, 0, 0, LcCyl};
 
 wirel0 = newl; Circle(wirel0) = {wirep0, centerp, wirep1};
 wirel1 = newl; Circle(wirel1) = {wirep1, centerp, wirep2};
@@ -60,10 +52,10 @@ wirel3 = newl; Circle(wirel3) = {wirep3, centerp, wirep0};
 wirell = newll; Line Loop(wirell) = {wirel0, wirel1, wirel2, wirel3}; 
 
 //Cu-Ni
-cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcFe};
-cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcFe};
-cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcFe};
-cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcFe};
+cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcCyl};
+cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcCyl};
+cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcCyl};
+cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcCyl};
 
 cunil0 = newl; Circle(cunil0) = {cunip0, centerp, cunip1};
 cunil1 = newl; Circle(cunil1) = {cunip1, centerp, cunip2};
@@ -71,6 +63,16 @@ cunil2 = newl; Circle(cunil2) = {cunip2, centerp, cunip3};
 cunil3 = newl; Circle(cunil3) = {cunip3, centerp, cunip0};
 
 cunill = newll; Line Loop(cunill) = {cunil0, cunil1, cunil2, cunil3}; 
+
+infairl0 = newl; Line(infairl0) = {airp0,infp0};
+infairl2 = newl; Line(infairl2) = {airp2,infp2};
+infll0 = newll; Line Loop(infll0) = {infairl0,infl0,infl1,-infairl2,-airl1,-airl0};
+infll2 = newll; Line Loop(infll2) = {infairl2,infl2,infl3,-infairl0,-airl3,-airl2};
+
+aircunil0 = newl; Line(aircunil0) = {cunip0,airp0};
+aircunil2 = newl; Line(aircunil2) = {cunip2,airp2};
+airll0 = newll; Line Loop(airll0) = {aircunil0,airl0,airl1,-aircunil2,-cunil1,-cunil0};
+airll2 = newll; Line Loop(airll2) = {aircunil2,airl2,airl3,-aircunil0,-cunil3,-cunil2};
 
 // Su cores
 sulls[] = {}; //line loops of filaments
@@ -92,55 +94,30 @@ For i In {0:(NumCore-1)}
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
+    Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
 EndFor
 
-//Cu
-wireps[] = {};
-For i In {0:NumCore}
-    wirep~{i} = newp; Point(wirep~{i}) = {R_Su_Outer*Cos(SliceAngle/NumCore*i),R_Su_Outer*Sin(SliceAngle/NumCore*i),SlicePitch/NumCore*i};
-    wireps[] += wirep~{i};
-EndFor
-wirel = newl; Spline(wirel) = {wireps[]};
-wire = newll; Wire(wire) = {wirel};
-cusubbodies[] = {};
+//Fe
+feinps[] = {};
+feoutps[] = {};
 For i In {0:(NumCore-1)}
-    //https://www.mynote-jp.com/entry/Circle-Defined-by-Three-Points
-    x1 = R_Fe * Cos(i * (CoreGapAngle+Angle_Su));
-    y1 = R_Fe*Sin(i * (CoreGapAngle+Angle_Su));
-    x2 = (R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su));
-    y2 = (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su));
-    x3 = R_Fe * Cos((i+1) * (CoreGapAngle+Angle_Su));
-    y3 = R_Fe*Sin((i+1) * (CoreGapAngle+Angle_Su));
-    alpha = x1 - x2;
-    beta = y1 - y2;
-    gamma = x2 - x3;
-    delta = y2 - y3;
-    norm1 = x1^2 + y1^2;
-    norm2 = x2^2 + y2^2;
-    norm3 = x3^2 + y3^2;
-    a = (delta * (norm1 - norm2) - beta*(norm2 - norm3))/(2*(alpha*delta - beta*gamma));
-    b = (-gamma * (norm1 - norm2) + alpha*(norm2 - norm3))/(2*(alpha*delta - beta*gamma));
-    r = Hypot(x1-a,y1-b);
-cusubdiskl~{i} = news; Disk(cusubdiskl~{i}) = {a,b,0,r};
-
-    cuwireps~{i}[] = {};
-    For j In {0:NumCore}
-        rotcos = Cos(SliceAngle/NumCore*j);
-        rotsin = Sin(SliceAngle/NumCore*j);
-        cuwirep~{i}~{j} = newp; Point(cuwirep~{i}~{j}) = {rotcos*a-rotsin*b,rotsin*a + rotcos*b,SlicePitch/NumCore*j};
-        cuwireps~{i}[] += cuwirep~{i}~{j};
-    EndFor
-    cuwirel~{i} = newl; Spline(cuwirel~{i}) = {cuwireps~{i}[]};
-    cuwire~{i} = newll; Wire(cuwire~{i}) = {cuwirel~{i}};
-
-    cusubdisku~{i} = news; Disk(cusubdisku~{i}) = {rotcos*a-rotsin*b,rotsin*a + rotcos*b,SlicePitch/NumCore*j,r};
-    cusuboutl~{i} = Extrude{Surface{cusubdiskl~{i}};} Using Wire{cuwire~{i}};
-    cusuboutu~{i} = Extrude{Surface{cusubdisku~{i}};} Using Wire{cuwire~{i}}
-    cusubbody~{i} = newv; BooleanUnion(cusubbody~{i}) = {Volume{cusuboutl~{i}[1]};Delete;}{Volume{cusuboutu~{i}[1]};Delete;}
-    cusubbodies[] += cusubbody~{i};
+    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feoutps[] += feoutp~{i};
+    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feinps[] += feinp~{i};
 EndFor
-cudisk = news; Disk(cudisk) = {0,0,0,R_Fe};
-cus = news; BooleanDifference(cus) = {Surface{cudisk};Delete;}{Surface{cusubdisks[]};Delete;};
+
+
+fels[] = {};
+For i In {0:(NumCore-2)}
+    fel~{i} = newl; Spline(fel~{i}) = {feoutp~{i}, feinp~{i},feoutp~{i+1}};
+    fels[] += fel~{i};
+EndFor
+
+fel~{NumCore-1} = newl; Spline(fel~{NumCore-1}) = {feoutp~{NumCore-1}, feinp~{NumCore-1},feoutp~{0}};
+fels[] += fel~{i};
+
+fell = newll; Line Loop(fell) = {fels[]};
 
 infs = news; Plane Surface(infs) = {infll,airll}; //AIR_OUT
 airs = news; Plane Surface(airs) = {airll,wirell}; //AIR
@@ -148,34 +125,12 @@ cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
 cus = news; Plane Surface(cus) = {fell}; //CU
 
-
-
-suends[] = {};
-subodys[] = {};
-For i In {0:(NumCore-1)}
-    suout~{i}[] = Extrude{Surface{sus~{i}};} Using Wire{wire}
-    suends[] += suout~{i}[0];
-    subodys[] += suout~{i}[1];
-    affinecos = Cos(SliceAngle);
-    affinesin = Sin(SliceAngle);
-    affinetx = R_Su_Outer*(Cos((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Cos((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
-    affinety = R_Su_Outer*(Sin((2 * i + 1)*CoreGapAngle/2 + i * Angle_Su) - Sin((2 * (i + 1) + 1)*CoreGapAngle/2 + (i + 1) * Angle_Su));
-    affinetz = 2*SlicePitch;
-    Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
-EndFor
-infout[] = Extrude{0,0,SlicePitch}{Surface{infs};};
-airout[] = Extrude{0,0,SlicePitch}{Surface{airs};};
-cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};};
-feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};};
-cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};};
-
-Physical Volume("Spherical shell", INF) = {infout[1]};
-Physical Volume("Air", AIR) = {airout[1]};
-Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
-Physical Volume("Cupper", CU) = {cuout[1]};
+Physical Surface("Spherical shell", INF) = {infs};
+Physical Surface("Air", AIR) = {airs};
+Physical Surface("Ferrium", FE) = {cunis,fes};
+Physical Surface("Cupper", CU) = {cus};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
-Printf("boundary surface = %g", cuniout[2]);
-Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
+Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
 
 Cohomology(1){{AIR,INF},{}};

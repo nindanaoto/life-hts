@@ -45,7 +45,7 @@ mkl
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_mkl
-./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --downlad-hypre --download-hpddm --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
 make
 ```
 
@@ -90,7 +90,7 @@ strumpack-bump-cuda
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_strumpack_cuda
-./configure --with-clanguage=cxx --with-debugging=0 --with-cuda --with-cusp --download-metis --download-parmetis --download-ptscotch --download-scalapack --download-strumpack --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl"
+./configure --with-clanguage=cxx --with-debugging=0 --with-openmp --with-cuda --with-cusp --download-metis --download-parmetis --download-ptscotch --download-strumpack --with-shared-libraries=0 --with-x=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" -CUDAOPTFLAGS="-O3"
 cd ../slepc
 export SLEPC_DIR=$PWD
 ./configure
