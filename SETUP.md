@@ -49,6 +49,24 @@ export PETSC_ARCH=real_mkl
 make
 ```
 
+mkl_mpi
+```
+export PETSC_DIR=$PWD
+export PETSC_ARCH=real_mkl_mpi
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
+make
+cd ../slepc-3.14.1
+export SLEPC_DIR=$PWD
+./configure
+make
+cd ../getdp
+rm -r bin
+mkdir bin
+cd bin
+cmake -DENABLE_MPI=1 -DENABLE_BLAS_LAPACK=0 ..
+make
+```
+
 strumpack
 ```
 export PETSC_DIR=$PWD

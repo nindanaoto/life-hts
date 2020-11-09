@@ -169,4 +169,6 @@ Mesh 3;
 
 Periodic Surface {uppers[]} = {lowers[]} Affine {Cos(SliceAngle),-Sin(SliceAngle),0,0, Sin(SliceAngle),Cos(SliceAngle),0,0, 0,0,1,SlicePitch, 0,0,0,1};
 
+Mesh 3;
+
 Cohomology(1){{AIR,INF},{}};

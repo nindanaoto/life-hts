@@ -4,19 +4,21 @@ Include "doublecoarse_data.pro";
 // Interactive settings
 //R = W/2; // Radius
 // Mesh size
-DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
+DefineConstant [meshFactor = {15, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
+DefineConstant [LcFe = meshFactor/2*LcCyl]; // Mesh size in Fe [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 DefineConstant [NumCore = 10];
+DefineConstant [Unitlength = 2];
 DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
-DefineConstant [SliceAngle = 2*Pi/NumCore];
-DefineConstant [SlicePitch = Pitch/NumCore];
+DefineConstant [SliceAngle = Unitlength*2*Pi/NumCore];
+DefineConstant [SlicePitch = Unitlength*2*Pitch/NumCore];
 
-centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
+centerp = newp; Point(centerp) = {0, 0, 0, LcAir};
 
 //Outer Shell
 infp0 = newp; Point(infp0) = {0, -R_inf, 0, LcInf};
@@ -58,10 +60,10 @@ wirel3 = newl; Circle(wirel3) = {wirep3, centerp, wirep0};
 wirell = newll; Line Loop(wirell) = {wirel0, wirel1, wirel2, wirel3}; 
 
 //Cu-Ni
-cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcCyl};
-cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcCyl};
-cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcCyl};
-cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcCyl};
+cunip0 = newp; Point(cunip0) = {0, -R_CuNi, 0, LcFe};
+cunip1 = newp; Point(cunip1) = {R_CuNi, 0, 0, LcFe};
+cunip2 = newp; Point(cunip2) = {0, R_CuNi, 0, LcFe};
+cunip3 = newp; Point(cunip3) = {-R_CuNi, 0, 0, LcFe};
 
 cunil0 = newl; Circle(cunil0) = {cunip0, centerp, cunip1};
 cunil1 = newl; Circle(cunil1) = {cunip1, centerp, cunip2};
@@ -96,9 +98,9 @@ EndFor
 feinps[] = {};
 feoutps[] = {};
 For i In {0:(NumCore-1)}
-    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feoutp~{i} = newp; Point(feoutp~{i}) = {R_Fe * Cos(i * (CoreGapAngle+Angle_Su)), R_Fe*Sin(i * (CoreGapAngle+Angle_Su)), 0, LcFe};
     feoutps[] += feoutp~{i};
-    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcCyl};
+    feinp~{i} = newp; Point(feinp~{i}) = {(R_Fe-Fe_Depression) * Cos((i+1/2) * (CoreGapAngle+Angle_Su)), (R_Fe-Fe_Depression)*Sin((i+1/2) * (CoreGapAngle+Angle_Su)), 0, LcFe};
     feinps[] += feinp~{i};
 EndFor
 
