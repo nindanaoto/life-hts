@@ -13,12 +13,12 @@ Angle_Su = {0.55, Visible changeGeometry, Name "Input/1Geometry/Su angle (rad)"}
 Outer_Depression = {20e-6, Visible changeGeometry, Name "Input/1Geometry/Oute depression length (m)"}, 
 Inner_Projection = {25e-6, Visible changeGeometry, Name "Input/1Geometry/Inner projection length (m)"}, 
 Fe_Depression = {27e-6, Visible changeGeometry, Name "Input/1Geometry/Ferrite depression length (m)"}
-ConductingMatrix = {1},
-meshLayerWidthTape = {0.001}, // Width of the control mesh layer around the cylinder
 NumCore = 10,
 CoreGapAngle = 2*Pi/NumCore - Angle_Su,
-SliceAngle = 2*Pi/NumCore,
-SlicePitch = Pitch/NumCore
+UnitLength = 1,
+SliceAngle = UnitLength*2*Pi/NumCore,
+SlicePitch = UnitLength*Pitch/NumCore,
+NumLayers = 5
 ];
 
 // ---- Mesh parameters ----

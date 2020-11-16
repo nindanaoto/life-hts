@@ -83,6 +83,7 @@ Function {
   dbdh[MagnAnhyDomain] = ($iter > 20) ? ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])) :
     (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique
+  RotatePZ[] = Rotate[ Vector[$X,$Y,$Z+$2], 0, 0, $1 ];
 }
 
 Jacobian {
@@ -120,8 +121,8 @@ Constraint {
   }
   { Name Periodic;
     Case {
-      { Region Upper; Type Link ; RegionRef Lower;
-        Coefficient 1; 
+      { Region Lower; Type Link ; RegionRef Upper;
+        Coefficient 1; Function RotatePZ[SliceAngle,SlicePitch];
       }
     }
   }
@@ -146,6 +147,10 @@ FunctionSpace {
         EntityType GroupsOfEdgesOf ; NameOfConstraint Current ; }
       { NameOfCoef Voltage1 ;
         EntityType GroupsOfEdgesOf ; NameOfConstraint Voltage ; }
+      { NameOfCoef phin ;
+        EntityType NodesOf ; NameOfConstraint Periodic;}
+      // { NameOfCoef he;
+      //   EntityType EdgesOf ; NameOfConstraint Periodic;}
     }
   }
 }
