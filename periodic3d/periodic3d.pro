@@ -28,7 +28,7 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {7, Step 100,
+    Itot = {15,
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-4,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
@@ -149,8 +149,8 @@ FunctionSpace {
         EntityType GroupsOfEdgesOf ; NameOfConstraint Voltage ; }
       { NameOfCoef phin ;
         EntityType NodesOf ; NameOfConstraint Periodic;}
-      // { NameOfCoef he;
-      //   EntityType EdgesOf ; NameOfConstraint Periodic;}
+      { NameOfCoef he;
+        EntityType EdgesOf ; NameOfConstraint Periodic;}
     }
   }
 }
