@@ -2,7 +2,7 @@
 tmux
 sudo apt update
 sudo apt upgrade -y
-sudo apt install -y libopenblas-dev build-essential cmake valgrind gfortran unzip libglu-dev libxrender-dev libxcursor-dev libxft-dev libxinerama-dev git libopenmpi-dev libomp-dev
+sudo apt install -y curl libopenblas-dev build-essential cmake valgrind gfortran unzip libglu-dev libxrender-dev libxcursor-dev libxft-dev libxinerama-dev git libopenmpi-dev libomp-dev
 curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.0.tar.gz
 curl -L -O https://slepc.upv.es/download/distrib/slepc-3.14.0.tar.gz
 curl -L -O http://onelab.info/files/onelab-Linux64.zip
@@ -45,7 +45,7 @@ mkl
 ```
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_mkl
-./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl" --with-mkl_cpardiso-dir="~/intel/mkl"
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="~/intel/mkl" --with-mkl_pardiso-dir="~/intel/mkl"
 make
 ```
 

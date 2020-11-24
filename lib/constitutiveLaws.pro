@@ -11,6 +11,7 @@ Group {
 Function {
     mu0 = 4*Pi*1e-7; // [H/m]
     nu0 = 1.0/mu0; // [m/H]
+    directionApplied[] = Vector[0., 0., 1.]; // Direction of current
     DefineFunction[Dim]; // Should be given
     DefineFunction[ec, jc, n, epsSigma, epsSigma2]; // Parameters that must be defined for Superconductor
     DefineFunction[mur0, m0, epsMu, epsNu]; // Parameters that must be defined for Anhysteretic Ferro
