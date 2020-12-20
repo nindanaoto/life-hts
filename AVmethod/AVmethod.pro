@@ -4,25 +4,30 @@ Group {
   Air = Region[AIR];
   AirInf = Region[INF];
   LinOmegaC = Region[{CU,FE}];
-  BndMatrix = Region[BND_WIRE];
-  Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
+  NonLinOmegaC = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
   MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
+  MagnLinDomain = Region[{CU, NonLinOmegaC, Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
-  OmegaC = Region[{LinOmegaC,Filaments}]; // conducting domain
+  OmegaC = Region[{LinOmegaC,NonLinOmegaC}]; // conducting domain
   OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
-  BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
+  BndOmegaC = Region[BND_WIRE]; // boundary of conducting domain
+  Surf_a_noGauge = Region[{BND_WIRE}];
   Cut = Region[CUT]; // thick cut
   Omega = Region[{OmegaC, OmegaCC}]; // full domain
   Lower = Region[LOWERSURFACE];
   Upper = Region[UPPERSURFACE];
+  Electrodes = Region[LOWERSURFACE];
 }
 
 Function {
   mu0 = 4*Pi*1e-7; // [Hm⁻¹]
   nu0 = 1/mu0;
+  epsSigma = 1e-8; // Importance of the linear part for a-formulation [-]
+  epsSigma2 = 1e-15; // To prevent division by 0 in sigma [-]
+  epsNu = 1e-10; // To prevent division by 0 in nu [T]
+
 
   DefineConstant[
     cusigma = {6e7,
@@ -73,20 +78,20 @@ Function {
   sigma[Copper] = cusigma;
 
   // power law E(J) = rho(J) * J, with rho(j) = Ec/Jc * (|J|/Jc)^(n-1)
-  rho[Filaments] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
-  dEdJ[Filaments] =
+  rho[NonLinOmegaC] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
+  dEdJ[NonLinOmegaC] =
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
     Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) *
       Tensor[CompX[$1]^2, CompX[$1] * CompY[$1], CompX[$1] * CompZ[$1],
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
   // a-formulation: Power law j(e) = sigma(e) * e, with sigma(e) = jc/ec^(1/n) * |e|^((1-n)/n)
-  sigma[Filaments] = Jc / Ec * 1.0 / ( epsSigma + ( Norm[$1]/Ec )^((n-1.0)/n) );
-  // sigmae[Filaments] = sigma[$1] * $1;
-  // djde[Filaments] = ($iter > -1) ? ((1.0/$relaxFactor) *
-  //     ( Jc / Ec * (1.0 / (epsSigma + ( (Norm[$1]/Ec)#3 )^((n-1.0)/n) ))#4 * TensorDiag[1, 1, 1]
-  //     + Jc/Ec^3 * (1.0-n)/n * (#4)^(2) * 1/((#3)^((n+1.0)/n) + epsSigma2 ) * SquDyadicProduct[$1]))
-  //         : (Jc / Ec * 1.0 / ( epsSigma + ( Norm[$1]/ec )^((n-1.0)/n) ) * TensorDiag[1, 1, 1] );
+  sigma[NonLinOmegaC] = Jc / Ec * 1.0 / ( epsSigma + ( Norm[$1]/Ec )^((n-1.0)/n) );
+  sigmae[NonLinOmegaC] = sigma[$1] * $1;
+  djde[NonLinOmegaC] = ($iter > -1) ? ((1.0/$relaxFactor) *
+      ( Jc / Ec * (1.0 / (epsSigma + ( (Norm[$1]/Ec)#3 )^((n-1.0)/n) ))#4 * TensorDiag[1, 1, 1]
+      + Jc/Ec^3 * (1.0-n)/n * (#4)^(2) * 1/((#3)^((n+1.0)/n) + epsSigma2 ) * SquDyadicProduct[$1]))
+          : (Jc / Ec * 1.0 / ( epsSigma + ( Norm[$1]/Ec )^((n-1.0)/n) ) * TensorDiag[1, 1, 1] );
   nu[MagnAnhyDomain] = 1/2 * ( (Norm[$1]+epsNu)#1 /mu0 - (mur0*m0/(mur0-1))#2
     + ( (#2 - #1/mu0)^2 + 4*m0*#1/((mur0-1)*mu0) )^(1/2) ) * 1/#1;
   dhdb[MagnAnhyDomain] = (1.0/$relaxFactor) *
@@ -124,11 +129,18 @@ Integration {
 Constraint {
   { Name Voltage ;
     Case {
+      { Region Electrodes; Value 1.0 ;}
     }
   }
   { Name Current ;
     Case {
-      { Region Cut; Value -Itot ; TimeFunction Sin_wt_p[]{2*Pi*Freq, 0.} ; }
+      { Region Electrodes; Value -Itot ; TimeFunction Sin_wt_p[]{2*Pi*Freq, 0.} ; }
+    }
+  }
+  { Name GaugeCondition ; Type Assign ;
+    Case {
+        // Zero on edges of a tree in Omega_CC, containing a complete tree on Surf_a_noGauge
+        {Region OmegaCC ; SubRegion Surf_a_noGauge; Value 0.; }
     }
   }
   { Name Periodic;
@@ -144,9 +156,20 @@ FunctionSpace {
   { Name ASpace; Type Form1;
     BasisFunction {
         { Name psie ; NameOfCoef ae ; Function BF_Edge ;
-            Support Omega_a_AndBnd ; Entity EdgesOf[ All, Not BndOmegaC ] ; }
+            Support Omega ; Entity EdgesOf[ All, Not BndOmegaC ] ; }
         { Name psie2 ; NameOfCoef ae2 ; Function BF_Edge ;
-            Support Omega_a_AndBnd ; Entity EdgesOf[ BndOmegaC ] ; } // To keep all dofs of BndOmegaC where a is unique (because e is known)
+            Support Omega ; Entity EdgesOf[ BndOmegaC ] ; } // To keep all dofs of BndOmegaC where a is unique (because e is known)
+    }
+    Constraint {
+        // { NameOfCoef ae; EntityType EdgesOf; NameOfConstraint a; }
+        // { NameOfCoef ae2; EntityType EdgesOf; NameOfConstraint a; }
+        // Gauge condition
+        { NameOfCoef ae; EntityType EdgesOfTreeIn; //EntitySubType StartingOn;
+            NameOfConstraint GaugeCondition; }
+    }
+  }
+  { Name GradVSpace; Type Form1;
+    BasisFunction {
         { Name vi; NameOfCoef Vi; Function BF_GradGroupOfNodes;
             Support ElementsOf[OmegaC, OnPositiveSideOf Electrodes];
             Entity GroupsOfNodesOf[Electrodes]; }
@@ -156,11 +179,6 @@ FunctionSpace {
         { Name I; Type AssociatedWith; NameOfCoef Vi; }
     }
     Constraint {
-        { NameOfCoef ae; EntityType EdgesOf; NameOfConstraint a; }
-        { NameOfCoef ae2; EntityType EdgesOf; NameOfConstraint a; }
-        // Gauge condition
-        { NameOfCoef ae; EntityType EdgesOfTreeIn; EntitySubType StartingOn;
-            NameOfConstraint GaugeCondition; }
         { NameOfCoef V;
             EntityType GroupsOfNodesOf; NameOfConstraint Voltage; }
         { NameOfCoef I;
@@ -170,66 +188,13 @@ FunctionSpace {
 }
 
 Formulation {
-  { Name MagDynH; Type FemEquation;
+  { Name MagDynA; Type FemEquation;
     Quantity {
-      { Name h; Type Local; NameOfSpace HSpace; }
-      { Name I1; Type Global; NameOfSpace HSpace[Current1]; }
-      { Name V1; Type Global; NameOfSpace HSpace[Voltage1]; }
-    }
-    Equation {
-      // Nonlinear weak form: Find h_k such that
-      //
-      //   \partial_t (\mu h_k, h') + (\rho(curl h_k) curl h_k, curl h')
-      //     + < n x e, h'> = 0,
-      //
-      // for all h' in Hspace.
-      //
-      // Linearization in the superconducting filaments:
-      //
-      //   E(J_k) \approx E(J_k-1) + (dE/dJ)_k-1 * (J_k - J_k-1)
-      //
-      // i.e.
-      //
-      //   (\rho(curl h_k) curl h_k, curl h') \approx
-      //       (\rho(curl h_k-1) curl h_k-1, curl h')
-      //     + (dEdJ(curl h_k-1) curl h_k, curl h')
-      //     - (dEdJ(curl h_k-1) curl h_k-1, curl h')
-      //
-      Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
-        In MagnLinDomain; Integration Int; Jacobian Vol;  }
-      
-      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-
-      //Galerkin { [ mu[] * DtHs[] , {h} ];
-      //  In Omega; Integration Int; Jacobian Vol;  }
-
-      Galerkin { [ rho[] * Dof{d h} , {d h} ];
-        In LinOmegaC; Integration Int; Jacobian Vol;  }
-
-      Galerkin { [ rho[{d h}] * {d h} , {d h} ];
-        In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dEdJ[{d h}] * Dof{d h} , {d h} ];
-        In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dEdJ[{d h}] * {d h} , {d h} ];
-        In Filaments ; Integration Int; Jacobian Vol;  }
-
-      GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
-    }
-  }
-  { Name MagDyn_avtot; Type FemEquation;
-    Quantity {
-      { Name a; Type Local; NameOfSpace a_space_3D; }
-      { Name ap; Type Local; NameOfSpace a_space_3D; } // To avoid auto-symmetrization by GetDP
-      { Name ur; Type Local; NameOfSpace grad_v_space_3D; }
-      { Name I; Type Global; NameOfSpace grad_v_space_3D [I]; }
-      { Name U; Type Global; NameOfSpace grad_v_space_3D [V]; }
+      { Name a; Type Local; NameOfSpace ASpace; }
+      // { Name ap; Type Local; NameOfSpace ASpace; } // To avoid auto-symmetrization by GetDP
+      { Name ur; Type Local; NameOfSpace GradVSpace; }
+      { Name I; Type Global; NameOfSpace GradVSpace [I]; }
+      { Name U; Type Global; NameOfSpace GradVSpace [V]; }
     }
     Equation {
         // Curl h term - NonMagnDomain
@@ -259,6 +224,30 @@ Formulation {
 
         Galerkin { [ sigma[ (- {a} + {a}[1]) / $DTime - {ur}] * Dof{ur} , {ur} ];
             In NonLinOmegaC; Integration Int; Jacobian Vol;  }
+
+        // Galerkin { [ - sigmae[ (- {a} + {a}[1]) / $DTime - {ur}], {a} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  }
+        // Galerkin { [ - sigmae[ (- {a} + {a}[1]) / $DTime - {ur}], {ur} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  }
+
+        // Galerkin { [ djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * Dof{a}/$DTime , {a} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  } // Dof appears linearly
+        // Galerkin { [ - djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * {a}/$DTime , {a} ];
+        //     In NonLinOmegaC ; Integration Int; Jacobian Vol;  }
+        // Galerkin { [ djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * Dof{ur} , {a} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  } // Dof appears linearly
+        // Galerkin { [ - djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * {ur} , {a} ];
+        //     In NonLinOmegaC ; Integration Int; Jacobian Vol;  }
+
+        // Galerkin { [ djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * Dof{a}/$DTime , {ur} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  } // Dof appears linearly
+        // Galerkin { [ - djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * {a}/$DTime , {ur} ];
+        //     In NonLinOmegaC ; Integration Int; Jacobian Vol;  }
+        // Galerkin { [ djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * Dof{ur} , {ur} ];
+        //     In NonLinOmegaC; Integration Int; Jacobian Vol;  } // Dof appears linearly
+        // Galerkin { [ - djde[ (- {a} + {a}[1]) / $DTime - {ur} ] * {ur} , {ur} ];
+        //     In NonLinOmegaC ; Integration Int; Jacobian Vol;  }
+
         // Linear OmegaC
         Galerkin { [ sigma[] * Dof{a} / $DTime , {a} ];
             In LinOmegaC; Integration Int; Jacobian Vol;  }
@@ -275,15 +264,15 @@ Formulation {
         // Global term
         // Galerkin { [ - hsVal[] * (directionApplied[] /\ Normal[]), {a} ];
         //     In Gamma_h ; Integration Int ; Jacobian Sur; }
-        GlobalTerm { [ Dof{I}  , {U} ]; In Lower; }
+        GlobalTerm { [ Dof{I}  , {U} ]; In Electrodes; }
     }
   }
 }
 
 Resolution {
-  { Name MagDynHTime;
+  { Name MagDynATime;
     System {
-      { Name A; NameOfFormulation MagDynH; }
+      { Name A; NameOfFormulation MagDynA; }
     }
     Operation {
       //options for PETsC
@@ -360,48 +349,87 @@ Resolution {
 }
 
 PostProcessing {
-  { Name MagDynH; NameOfFormulation MagDynH;
+  { Name MagDynA; NameOfFormulation MagDynA;
     Quantity {
-      { Name phi; Value{ Local{ [ {dInv h} ] ;
-            In Omega; Jacobian Vol; } } }
-      { Name h; Value{ Local{ [ {h} ] ;
-	    In Omega; Jacobian Vol; } } }
-      { Name j; Value{ Local{ [ {d h} ] ;
-	    In OmegaC; Jacobian Vol; } } }
-      { Name norm_j; Value{ Local{ [ Norm[{d h}] ] ;
-	    In OmegaC; Jacobian Vol; } } }
-      { Name b; Value{ Local{ [ mu[]*{h} ] ;
-            In Omega; Jacobian Vol; } } }
-      { Name dtb; Value{ Local{ [ mu[]* Dt[{h}] ] ;
-            In Omega; Jacobian Vol; } } }
-      { Name I1 ; Value { Term { [ {I1} ] ;
-            In Cut ; } } }
-      { Name V1 ; Value { Term { [ {V1} ] ;
-            In Cut ; } } }
-      { Name Z1 ; Value { Term { [ {V1} / {I1} ] ;
-            In Cut ; } } }
-      { Name Losses ; Value { Integral { [ rho[{d h}] * {d h} * {d h}];
-            In OmegaC ; Integration Int; Jacobian Vol; } } }
-    }
+      // { Name a; Value{ Local{ [ {a} ] ;
+      //     In Omega; Jacobian Vol; } } }
+      // { Name b; Value{ Local{ [ {d a} ] ;
+      //     In Omega; Jacobian Vol; } } }
+      // { Name mur; Value{ Local{ [ 1.0/(nu[{d a}] * mu0) ] ;
+      //     In MagnAnhyDomain; Jacobian Vol; } } }
+      { Name h; Value {
+          Term { [ nu[] * {d a} ] ; In MagnLinDomain; Jacobian Vol; }
+          Term { [ nu[{d a}] * {d a} ] ; In MagnAnhyDomain; Jacobian Vol; }
+          }
+      }
+      // { Name e; Value{ Local{ [ - Dt[{a}] - {ur} ] ;
+      //     In OmegaC; Jacobian Vol; } } }
+      // { Name ur; Value{ Local{ [ {ur} ] ;
+      //     In OmegaC; Jacobian Vol; } } }
+      { Name j; Value{ Local{ [ sigmae[ - Dt[{a}] - {ur} ] ] ;
+          In OmegaC; Jacobian Vol; } } }
+      { Name norm_j; Value{ Local{ [ Norm[sigmae[ - Dt[{a}] - {ur} ]] ] ;
+          In OmegaC; Jacobian Vol; } } }
+      // { Name I; Value{ Term{ [ {I} ] ;
+      //     In OmegaC; } } }
+      // { Name U; Value{ Term{ [ {U} ] ;
+      //     In OmegaC; } } }
+      // Not axisym, so surface integral to give (total) magnetization per unit length.
+      // Here, the average is computed. ATTENTION: Factor 2 (for end junctions) is not introduced
+      // { Name m_avg; Value{ Integral{ [ 0.5 * XYZ[]
+      //     /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ] / (SurfaceArea[]) ] ;
+      //     In OmegaC; Integration Int; Jacobian Vol; } } }
+      // { Name m_avg_y_tesla; Value{ Integral{ [ mu0*0.5 * Vector[0,1,0] * (XYZ[]
+      //     /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (SurfaceArea[]) ] ;
+      //     In OmegaC; Integration Int; Jacobian Vol; } } }
+      // { Name m_avg_x_tesla; Value{ Integral{ [ mu0*0.5 * Vector[1,0,0] * (XYZ[]
+      //     /\ sigmae[ (- {a} + {a}[1]) / $DTime - {ur} ]) / (SurfaceArea[]) ] ;
+      //     In OmegaC; Integration Int; Jacobian Vol; } } }
+      // { Name hsVal; Value{ Term { [ hsVal[] ]; In Omega; } } }
+      // { Name bsVal; Value{ Term { [ mu0*hsVal[] ]; In Omega; } } }
+      // { Name power;
+      //     Value{
+      //         Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[{d a}] * {d a} ] ;
+      //             In MagnAnhyDomain ; Integration Int ; Jacobian Vol; }
+      //         Integral{ [ ({d a} - {d a}[1]) / $DTime * nu[] * {d a} ] ;
+      //             In MagnLinDomain ; Integration Int ; Jacobian Vol; }
+      //         Integral{ [sigma[ (- {a} + {a}[1]) / $DTime - {ur}]
+      //             * ((- {a} + {a}[1]) / $DTime - {ur} ) * ((- {a} + {a}[1]) / $DTime - {ur} )] ;
+      //             In OmegaC ; Integration Int ; Jacobian Vol; }
+      //     }
+      // }
+      // { Name dissPowerGlobal;
+      //     Value{
+      //         Term{ [ {U}*{I} ] ; In OmegaC;}
+      //     }
+      // }
+      // { Name dissPower;
+      //     Value{
+      //         Integral{ [sigma[ (- {a} + {a}[1]) / $DTime - {ur}]
+      //             * ((- {a} + {a}[1]) / $DTime - {ur} ) * ((- {a} + {a}[1]) / $DTime - {ur} )] ;
+      //             In OmegaC ; Integration Int ; Jacobian Vol; }
+      //     }
+      // }
   }
+}
 }
 
 PostOperation {
-  { Name MagDynH ; NameOfPostProcessing MagDynH ; LastTimeStepOnly visu ;
+  { Name MagDynA ; NameOfPostProcessing MagDynA ; LastTimeStepOnly visu ;
     Operation {
       Echo["General.Verbosity=3;", File "res/option.pos"];
       Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
       Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
       Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
-      Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
-        File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
-      Print[ Losses[Filaments], OnGlobal, Format TimeTable,
-        File > "res/losses_filaments.txt"] ;
-      Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
-        File > "res/losses_matrix.txt"] ;
-      Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
-      Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
-      Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
+      // Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
+      //   File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
+      // Print[ Losses[NonLinOmegaC], OnGlobal, Format TimeTable,
+      //   File > "res/losses_filaments.txt"] ;
+      // Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
+      //   File > "res/losses_matrix.txt"] ;
+      // Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
+      // Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
+      // Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
       Echo["General.Verbosity=5;", File "res/option.pos"];
     }
   }

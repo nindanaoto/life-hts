@@ -47,7 +47,7 @@ Function {
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
     iter_max = {12,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
-    visu = {1, Choices{0, 1}, AutoCheck 0,
+    visu = {0, Choices{0, 1}, AutoCheck 0,
       Name "Input/Solver/Visu", Label "Real-time visualization"}
   ];
 
@@ -177,7 +177,8 @@ Resolution {
       { Name A; NameOfFormulation MagDynH; }
     }
     Operation {
-      SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
+      // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // create directory to store result files
       CreateDirectory["res"];
 

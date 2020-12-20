@@ -222,7 +222,7 @@ PostOperation {
         Operation{
             Print[ time[OmegaC], OnRegion OmegaC, LastTimeStepOnly, Format Table, SendToServer "Output/0Time [s]"] ;
             Print[ I, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/1Applied current [A]"] ;
-            Print[ V, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/2Tension [Vm^-1]"] ;
+            // Print[ V, OnRegion Cuts, LastTimeStepOnly, Format Table, SendToServer "Output/2Tension [Vm^-1]"] ;
             Print[ dissPower[OmegaC], OnGlobal, LastTimeStepOnly, Format Table, SendToServer "Output/3Joule loss [W]"] ;
         }
     }

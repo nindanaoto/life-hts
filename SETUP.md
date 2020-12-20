@@ -3,13 +3,13 @@ tmux
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl libopenblas-dev build-essential cmake valgrind gfortran unzip libglu-dev libxrender-dev libxcursor-dev libxft-dev libxinerama-dev git libopenmpi-dev libomp-dev
-curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.0.tar.gz
+curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.1.tar.gz
 curl -L -O https://slepc.upv.es/download/distrib/slepc-3.14.0.tar.gz
 curl -L -O http://onelab.info/files/onelab-Linux64.zip
 unzip onelab-Linux64.zip
-tar zxvf petsc-lite-3.14.0.tar.gz
+tar zxvf petsc-lite-3.14.1.tar.gz
 tar zxvf slepc-3.14.0.tar.gz
-rm onelab-Linux64.zip petsc-lite-3.14.0.tar.gz slepc-3.14.0.tar.gz
+rm onelab-Linux64.zip petsc-lite-3.14.1.tar.gz slepc-3.14.0.tar.gz
 git clone https://github.com/nindanaoto/life-hts
 git clone https://gitlab.onelab.info/getdp/getdp.git
 git clone https://gitlab.onelab.info/gmsh/gmsh.git

@@ -320,20 +320,21 @@ PostProcessing {
 PostOperation {
   { Name MagDynH ; NameOfPostProcessing MagDynH ; LastTimeStepOnly visu ;
     Operation {
-      Echo["General.Verbosity=3;", File "res/option.pos"];
-      Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
-      Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
-      Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
-        File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
-      Print[ Losses[Filaments], OnGlobal, Format TimeTable,
-        File > "res/losses_filaments.txt"] ;
-      Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
-        File > "res/losses_matrix.txt"] ;
-      Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
-      Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
-      Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
-      Echo["General.Verbosity=5;", File "res/option.pos"];
+      // Echo["General.Verbosity=3;", File "res/option.pos"];
+      // Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
+      // Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
+      Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
+      // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
+      // Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
+      //   File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
+      // Print[ Losses[Filaments], OnGlobal, Format TimeTable,
+      //   File > "res/losses_filaments.txt"] ;
+      // Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
+      //   File > "res/losses_matrix.txt"] ;
+      // Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
+      // Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
+      // Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
+      // Echo["General.Verbosity=5;", File "res/option.pos"];
     }
   }
 }
