@@ -1,0 +1,194 @@
+Info    : Running 'getdp dularmodel.pro -solve MagDynHTime bench.txt' [GetDP 3.3.1-git-eedcf2aa, 1 node, max. 1 thread]
+Info    : Started (Wed Dec 23 14:39:42 2020, Wall = 0.00018096s, CPU = 0s, Mem = 22.2188Mb)
+Info    : Initializing Gmsh
+Info    : Loading problem definition 'dularmodel.pro'
+Info    : Loading problem definition 'dularmodel_data.pro'
+Info    : Selected Resolution 'MagDynHTime'
+Info    : Loading Geometric data 'dularmodel.msh'
+Info    : Reading 'dularmodel.msh'...
+Info    : Reading 'dularmodel.msh'...
+Info    : 179 entities
+Info    : 179 entities
+Info    : 7160 nodes
+Info    : 7160 nodes
+Info    : 14513 elements
+Info    : 14513 elements
+Info    : Done reading 'dularmodel.msh'
+Info    : Done reading 'dularmodel.msh'
+Info    : System 'A' : Real
+P r e - P r o c e s s i n g . . .
+Info    : Treatment Formulation 'MagDynH'
+Info    :   Generate ExtendedGroup '_BF_Entity_14' (NodesOf, None)
+Info    :   Generate ExtendedGroup '_BF_Entity_15' (EdgesOf, Not)
+Info    :   Generate ExtendedGroup '_BF_Entity_16' (GroupsOfEdgesOf, None)
+Info    : System 1/1: 17976 Dofs
+Info    : (Wall = 0.063503s, CPU = 0.051604s, Mem = 35.9492Mb)
+E n d   P r e - P r o c e s s i n g
+P r o c e s s i n g . . .
+Info    : SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"]
+Info    : CreateDir[res]
+Info    : InitSolution[A]
+Info    : TimeLoopTheta ...
+Info    : Theta Time = 0.0002 s (TimeStep 1, DTime 0.0002)
+Info    : Generate[A]
+Info    : Solve[A]
+Info    : N: 17976 - preonly lu mkl_pardiso
+Info    :   0 KSP Residual norm 2.165542208415e+03
+Info    :   1 KSP Residual norm 1.331449555167e-11
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 000: abs 1.676271978707e+00 rel 1.000000000000e+00
+Info    : While...
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.165556591052e+03
+Info    :   1 KSP Residual norm 5.464799513893e-11
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 001: abs 1.040735767507e+63 rel 6.208633090138e+62
+Info    : Test
+Info    : Print
+*** Non convergence (iter 1): recomputing with reduced step 6.66667e-05
+Info    : RemoveLastSolution[A]
+Info    : Freeing Solution 1
+Info    : Theta Time = 6.6666667e-05 s (TimeStep 1, DTime 6.66667e-05)
+Info    : Generate[A]
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 7.223451433279e+02
+Info    :   1 KSP Residual norm 2.784814735143e-12
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 000: abs 3.612652794201e+00 rel 1.000000000000e+00
+Info    : While...
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 7.223900931697e+02
+Info    :   1 KSP Residual norm 1.194196668096e-11
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 001: abs 2.048624540534e+24 rel 5.670693136695e+23
+Info    : Test
+Info    : Print
+*** Non convergence (iter 1): recomputing with reduced step 2.22222e-05
+Info    : RemoveLastSolution[A]
+Info    : Freeing Solution 1
+Info    : Theta Time = 2.2222222e-05 s (TimeStep 1, DTime 2.22222e-05)
+Info    : Generate[A]
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.408890657288e+02
+Info    :   1 KSP Residual norm 9.417494329870e-13
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 000: abs 8.773578399925e+00 rel 1.000000000000e+00
+Info    : While...
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.410794227810e+02
+Info    :   1 KSP Residual norm 2.072324727548e-12
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 001: abs 1.355122789668e+16 rel 1.544549701271e+15
+Info    : Test
+Info    : Print
+*** Non convergence (iter 1): recomputing with reduced step 7.40741e-06
+Info    : RemoveLastSolution[A]
+Info    : Freeing Solution 1
+Info    : Theta Time = 7.4074074e-06 s (TimeStep 1, DTime 7.40741e-06)
+Info    : Generate[A]
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 8.043854549340e+01
+Info    :   1 KSP Residual norm 2.983992477816e-13
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 000: abs 2.347632811261e+01 rel 1.000000000000e+00
+Info    : While...
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 8.225278005483e+01
+Info    :   1 KSP Residual norm 4.253410767943e-13
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 001: abs 2.703199153713e+01 rel 1.151457391781e+00
+Info    : Test
+Info    : Print
+*** Non convergence (iter 1): recomputing with reduced step 2.46914e-06
+Info    : RemoveLastSolution[A]
+Info    : Freeing Solution 1
+Info    : Theta Time = 2.4691358e-06 s (TimeStep 1, DTime 2.46914e-06)
+Info    : Generate[A]
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.707079291705e+01
+Info    :   1 KSP Residual norm 9.629579658742e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 000: abs 2.739750685683e+01 rel 1.000000000000e+00
+Info    : While...
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.869011841174e+01
+Info    :   1 KSP Residual norm 5.906784470515e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 001: abs 1.746610093997e+01 rel 6.375069465716e-01
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.779920042158e+01
+Info    :   1 KSP Residual norm 1.857704045848e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 002: abs 1.056376278085e+01 rel 3.855738712304e-01
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.745053383856e+01
+Info    :   1 KSP Residual norm 3.989944091222e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 003: abs 6.145986220149e+00 rel 2.243264780356e-01
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.737666625105e+01
+Info    :   1 KSP Residual norm 2.292339065722e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 004: abs 3.127733299419e+00 rel 1.141612379463e-01
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.733479696984e+01
+Info    :   1 KSP Residual norm 3.411383685901e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 005: abs 1.108749327535e+00 rel 4.046898622304e-02
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.734432876385e+01
+Info    :   1 KSP Residual norm 2.655139864267e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 006: abs 1.418399814575e-01 rel 5.177112727762e-03
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.735315775532e+01
+Info    :   1 KSP Residual norm 4.173586089341e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 007: abs 2.172025880490e-03 rel 7.927823111205e-05
+Info    : Solve[A]
+Info    :   0 KSP Residual norm 2.735197429638e+01
+Info    :   1 KSP Residual norm 3.424371506291e-14
+Info    : Generate[A]
+Info    : GetResidual[A]
+Info    : Print
+Residual 008: abs 2.400379751766e-07 rel 8.761307239776e-09
+Info    : Test
+Info    : SaveSolution[A]
+Info    : Test
+Info    : Test
+Info    : Print
+*** Fast convergence: increasing time step to 3.7037e-06
+Info    : Theta Time = 6.1728395e-06 s (TimeStep 2, DTime 3.7037e-06)
+Info    : Generate[A]

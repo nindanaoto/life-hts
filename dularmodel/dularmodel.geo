@@ -1,6 +1,6 @@
 SetFactory("OpenCASCADE");
 // Include cross data
-Include "coupled_data.pro";
+Include "dularmodel_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -90,7 +90,6 @@ For i In {0:(NumCore-1)}
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
     Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
-    Physical Line(Sprintf("Super Conductor Boundary %g",i), BND_FILAMENT0+i) = {sull~{i}};
 EndFor
 
 //Fe
@@ -123,12 +122,10 @@ cus = news; Plane Surface(cus) = {fell}; //CU
 
 Physical Surface("Spherical shell", INF) = {infs};
 Physical Surface("Air", AIR) = {airs};
-Physical Surface("Ferrium", FE) = {fes};
-Physical Surface("Cupper", CU) = {cunis,cus};
+Physical Surface("Ferrium", FE) = {cunis,fes};
+Physical Surface("Cupper", CU) = {cus};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
 Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
-Physical Line("Copper boundary", BND_CU) = {fels[]};
-Physical Line("Ferium boundary", BND_FE) = {cunil0, cunil1, cunil2, cunil3};
 
 Cohomology(1){{AIR,INF},{}};

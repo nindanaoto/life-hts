@@ -3,13 +3,13 @@ tmux
 sudo apt update
 sudo apt upgrade -y
 sudo apt install -y curl libopenblas-dev build-essential cmake valgrind gfortran unzip libglu-dev libxrender-dev libxcursor-dev libxft-dev libxinerama-dev git libopenmpi-dev libomp-dev
-curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.1.tar.gz
+curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.2.tar.gz
 curl -L -O https://slepc.upv.es/download/distrib/slepc-3.14.0.tar.gz
 curl -L -O http://onelab.info/files/onelab-Linux64.zip
 unzip onelab-Linux64.zip
-tar zxvf petsc-lite-3.14.1.tar.gz
+tar zxvf petsc-lite-3.14.2.tar.gz
 tar zxvf slepc-3.14.0.tar.gz
-rm onelab-Linux64.zip petsc-lite-3.14.1.tar.gz slepc-3.14.0.tar.gz
+rm onelab-Linux64.zip petsc-lite-3.14.2.tar.gz slepc-3.14.0.tar.gz
 git clone https://github.com/nindanaoto/life-hts
 git clone https://gitlab.onelab.info/getdp/getdp.git
 git clone https://gitlab.onelab.info/gmsh/gmsh.git
@@ -169,4 +169,18 @@ mkdir bin
 cd bin
 cmake -DENABLE_MPI=1 -DENABLE_BLAS_LAPACK=0 ..
 make
+```
+
+Hokudai
+```
+curl -L -O http://ftp.mcs.anl.gov/pub/petsc/release-snapshots/petsc-lite-3.14.2.tar.gz
+tar zxvf petsc-lite-3.14.2.tar.gz
+rm petsc-lite-3.14.2.tar.gz
+cd petsc-3.14.2/
+export PETSC_DIR=$PWD
+export PETSC_ARCH=real_mkl
+./configure --with-clanguage=cxx --with-debugging=0 --with-mpi=0 --with-mpiuni-fortran-binding=0 --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3 -march=native" -CXXOPTFLAGS="-O3 -march=native" -FOPTFLAGS="-O3 -march=native" --with-blaslapack-dir="/home/opt/local/cores/intel/mkl/" --with-mkl_pardiso-dir="/home/opt/local/cores/intel/mkl/"
+make
+
+cmake -DENABLE_BLAS_LAPACK=0 -DENABLE_PEWE=OFF ..
 ```

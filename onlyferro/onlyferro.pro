@@ -61,7 +61,7 @@ Function {
       Name "Input/Solver/Relative permeability at low fields"},
     epsMu = {1e-15,
       Name "Input/Solver/numerical epsiron of mu"},
-    Flag_NR = {0,
+    Flag_NR = {1,
       Name "Input/Solver/Newton Raphson Flag"}
   ];
 
