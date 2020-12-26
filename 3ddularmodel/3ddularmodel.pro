@@ -52,7 +52,7 @@ Function {
     time1 = periods * (1 / Freq), // final time
     dt = {2e-6, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
-    adaptive = {0, Choices{0,1},
+    adaptive = {1, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
@@ -95,7 +95,8 @@ Function {
            CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
           ];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
+  dbdh[MagnAnhyDomain] = // (Norm[$1]<epsMu)? TensorDiag[0,0,0]:
+    mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
     (
       Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
       -m0*(mur0-1)^2*
@@ -350,7 +351,7 @@ PostOperation {
       // Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
       Print[ h, OnElementsOf Omega , Format TimeTable, File "res/h.timetable", Name "h [Am⁻1]" ];
       // Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      // Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
+      Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
       // Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [N/C]" ];
       // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
       // Print[ norm_j, OnElementsOf OmegaC , Format TimeTable, File "res/norm_j.timetable", Name "|j| [Am⁻²]" ];

@@ -35,6 +35,3 @@ file_*
 *.csv.*
 *.png
 .vscode
-scripts/exponential
-scripts/ferromulticore
-scripts/periodic3d

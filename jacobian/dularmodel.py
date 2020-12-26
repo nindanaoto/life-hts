@@ -10,7 +10,7 @@ mu = mu0*(1+(1/(mur0-1)+sqrt(Hx**2+Hy**2+Hz**2)/m0)**-1)
 B = Matrix([mu*Hx,mu*Hy,mu*Hz])
 
 H = Matrix([Hx,Hy,Hz])
-dBdHcommon = mu0/(normH*(m0+normH*(mur0-1))**2)
+dBdHcommon = mu0/((m0+normH*(mur0-1))**2)
 print("μ")
 print(latex(mu))
 print("dB/dH")
