@@ -1,4 +1,4 @@
-Include "dularmodel_data.pro";
+Include "jamodel_data.pro";
 
 Group {
   Air = Region[AIR];

@@ -1,34 +1,19 @@
-SetFactory("OpenCASCADE");
+// SetFactory("OpenCASCADE");
 // Include cross data
-Include "boundary_data.pro";
+Include "3dboundary_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
 // Mesh size
-DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
+DefineConstant [meshFactor = {8, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
-DefineConstant [NumCore = 10];
-DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
-
-//Outer Shell
-infp0 = newp; Point(infp0) = {0, -R_inf, 0, LcInf};
-infp1 = newp; Point(infp1) = {R_inf, 0, 0, LcInf};
-infp2 = newp; Point(infp2) = {0, R_inf, 0, LcInf};
-infp3 = newp; Point(infp3) = {-R_inf, 0, 0, LcInf};
-
-infl0 = newl; Circle(infl0) = {infp0, centerp, infp1};
-infl1 = newl; Circle(infl1) = {infp1, centerp, infp2};
-infl2 = newl; Circle(infl2) = {infp2, centerp, infp3};
-infl3 = newl; Circle(infl3) = {infp3, centerp, infp0};
-
-infll = newll; Line Loop(infll) = {infl0, infl1, infl2, infl3};
 
 //Air
 airp0 = newp; Point(airp0) = {0, -R_air, 0, LcAir};
@@ -89,7 +74,6 @@ For i In {0:(NumCore-1)}
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
-    Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
 EndFor
 
 //Fe
@@ -114,18 +98,44 @@ fels[] += fel~{i};
 
 fell = newll; Line Loop(fell) = {fels[]};
 
-infs = news; Plane Surface(infs) = {infll,airll}; //AIR_OUT
 airs = news; Plane Surface(airs) = {airll,wirell}; //AIR
 cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
 cus = news; Plane Surface(cus) = {fell}; //CU
 
-Physical Surface("Spherical shell", INF) = {infs};
-Physical Surface("Air", AIR) = {airs};
-Physical Surface("Ferrium", FE) = {cunis,fes};
-Physical Surface("Cupper", CU) = {cus};
+suends[] = {};
+subodys[] = {};
+//Periodic is forced by Extrude
+For i In {0:(NumCore-1)}
+    suout~{i}[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{sus~{i}};Layers{NumLayers};};
+    suends[] += suout~{i}[0];
+    subodys[] += suout~{i}[1];
+    Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
+EndFor
 
-// Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
-Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
+airout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{airs};Layers{NumLayers};};
+cuniout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cunis};Layers{NumLayers};};
+feout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{fes};Layers{NumLayers};};
+cuout[] = Extrude{{0,0,SlicePitch},{0,0,SlicePitch},{0,0,SlicePitch},SliceAngle}{Surface{cus};Layers{NumLayers};};
 
-Cohomology(1){{AIR,INF},{}};
+Physical Volume("Air", AIR) = {airout[1]};
+Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
+Physical Volume("Cupper", CU) = {cuout[1]};
+
+Printf("boundary surface = %g", cuniout[2]);
+Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
+
+
+lowers[] = {infs,airs,cunis,fes,cus};
+uppers[] = {infout[0],airout[0],cuniout[0],feout[0],cuout[0]};
+For i In {0:(NumCore-1)}
+    lowers[] += sus~{i};
+    uppers[] += suout~{i}[0];
+EndFor
+
+Physical Surface("Lower Surface", LOWERSURFACE) = {lowers[]};
+Physical Surface("Upper Surface", UPPERSURFACE) = {uppers[]};
+
+Geometry.NumSubEdges = 1000;
+
+Cohomology(1){{AIR},{};

@@ -1,6 +1,7 @@
 // ---- Geometry parameters ----
 DefineConstant[
 changeGeometry = {0, Choices{0,1}, Name "Input/1Geometry/1Show geometry?"},
+Pitch = {2e-3, Visible changeGeometry, Name "Input/1Geometry/Twist pitch (m)"},
 R_wire = {0.000337, Visible changeGeometry, Name "Input/1Geometry/Wire radius (m)"}, 
 R_CuNi = {0.000322, Visible changeGeometry, Name "Input/1Geometry/CuNi radius (m)"}, 
 R_Su_Outer = {0.000261, Visible changeGeometry, Name "Input/1Geometry/Su outer radius (m)"}, 
@@ -11,9 +12,13 @@ R_air = {0.0007, Max R_inf, Visible changeGeometry, Name "Input/1Geometry/Inner 
 Angle_Su = {0.55, Visible changeGeometry, Name "Input/1Geometry/Su angle (rad)"}, 
 Outer_Depression = {20e-6, Visible changeGeometry, Name "Input/1Geometry/Oute depression length (m)"}, 
 Inner_Projection = {25e-6, Visible changeGeometry, Name "Input/1Geometry/Inner projection length (m)"}, 
-Fe_Depression = {27e-6, Visible changeGeometry, Name "Input/1Geometry/Ferrite depression length (m)"},
-ConductingMatrix = {1},
-meshLayerWidthTape = {0.001} // Width of the control mesh layer around the cylinder
+Fe_Depression = {27e-6, Visible changeGeometry, Name "Input/1Geometry/Ferrite depression length (m)"}
+NumCore = 10,
+CoreGapAngle = 2*Pi/NumCore - Angle_Su,
+UnitLength = 1,
+SliceAngle = UnitLength*2*Pi/NumCore,
+SlicePitch = UnitLength*Pitch/NumCore,
+NumLayers = 5
 ];
 
 // ---- Mesh parameters ----
@@ -21,8 +26,9 @@ DefineConstant [meshMult = {0.03, Name "Input/2Mesh/1Mesh size multiplier (-)"}]
 
 // ---- Constant definition for regions ----
 AIR = 1000;
-INF = 2000;
 MATRIX = 3000;
+LOWERSURFACE = 3001;
+UPPERSURFACE = 3002;
 FILAMENT0 = 23000;
 FILAMENT1 = 23001;
 FILAMENT2 = 23002;
