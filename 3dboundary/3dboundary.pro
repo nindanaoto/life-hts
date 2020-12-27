@@ -6,7 +6,7 @@ Group {
   BndMatrix = Region[BND_WIRE];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
   MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
+  MagnLinDomain = Region[{CU, Filaments, Air}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
@@ -49,7 +49,7 @@ Function {
       Name "Input/Solver/0Periods to simulate"},
     time0 = 0, // initial time
     time1 = periods * (1 / Freq), // final time
-    dt = {2e-6, Min 1e-7, Max 1e-3, Step 1e-6,
+    dt = {8e-8,
       Name "Input/Solver/1Time step [s]"}
     adaptive = {1, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
