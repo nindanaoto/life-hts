@@ -10,7 +10,6 @@ DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
-DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
@@ -126,8 +125,8 @@ Printf("boundary surface = %g", cuniout[2]);
 Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
 
 
-lowers[] = {infs,airs,cunis,fes,cus};
-uppers[] = {infout[0],airout[0],cuniout[0],feout[0],cuout[0]};
+lowers[] = {airs,cunis,fes,cus};
+uppers[] = {airout[0],cuniout[0],feout[0],cuout[0]};
 For i In {0:(NumCore-1)}
     lowers[] += sus~{i};
     uppers[] += suout~{i}[0];
