@@ -1,4 +1,4 @@
-Include "3dbaoundary_data.pro";
+Include "3dboundary_data.pro";
 
 Group {
   Air = Region[AIR];
