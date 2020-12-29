@@ -1,6 +1,6 @@
 SetFactory("OpenCASCADE");
 // Include cross data
-Include "jamodel_data.pro";
+Include "JacNLdular_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius

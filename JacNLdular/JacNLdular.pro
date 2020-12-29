@@ -1,4 +1,4 @@
-Include "jamodel_data.pro";
+Include "JacNLdular_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -60,21 +60,10 @@ Function {
     mur0 = {1700.0,
       Name "Input/Solver/Relative permeability at low fields"},
     epsMu = {1e-15,
-      Name "Input/Solver/numerical epsiron of mu"},
-    Msat = {1.456e6,
-      Name "Input/Solver/Saturation magnetization of the material [A/V]"},
-    a = {64.77,
-      Name "Input/Solver/Quantifies domain wall density [A/m]"},
-    k = {7.645,
-      Name "Input/Solver/Bloch interdomain coupling"},
-    c = {0.0,
-      Name "Input/Solver/Magnetization reversibility"},
-    alpha = {9.8e-5,
-      Name "Input/Solver/Bloch interdomain coupling"}
+      Name "Input/Solver/numerical epsiron of mu"}
   ];
 
   dt_max = adaptive ? dt_max : dt;
-  hyst_Fe = { Msat, a, k, c, alpha};
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
@@ -88,6 +77,15 @@ Function {
       Tensor[CompX[$1]^2, CompX[$1] * CompY[$1], CompX[$1] * CompZ[$1],
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
+  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
+  dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
+    (
+      Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
+      -m0*(mur0-1)^2*
+      Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
+             CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
+             CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
+    );
 }
 
 Jacobian {
@@ -146,20 +144,12 @@ FunctionSpace {
         EntityType GroupsOfEdgesOf ; NameOfConstraint Voltage ; }
     }
   }
-  { Name BSpace ; Type Vector;
-    BasisFunction {
-      { Name sex ; NameOfCoef aex ; Function BF_VolumeX ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
-      { Name sey ; NameOfCoef aey ; Function BF_VolumeY ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
-      { Name sez ; NameOfCoef aez ; Function BF_VolumeZ ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
-    }
-  }
 }
 
 Formulation {
   { Name MagDynH; Type FemEquation;
     Quantity {
       { Name h; Type Local; NameOfSpace HSpace; }
-      { Name b; Type Local; NameOfSpace BSpace; }//Previous step's B
       { Name I1; Type Global; NameOfSpace HSpace[Current1]; }
       { Name V1; Type Global; NameOfSpace HSpace[Voltage1]; }
     }
@@ -185,11 +175,11 @@ Formulation {
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
       
-      Galerkin { [ Dof{b} / $DTime , {h} ];
+      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [-(SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles} / $DTime) , {h} ];
+      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ dbdh_Jiles[{h},{b},{h}-{h}[1]]{List[hyst_Fe]} * Dof{h} / $DTime , {h}];
+      Galerkin { JacNL[ dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -204,13 +194,6 @@ Formulation {
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
-
-      // h_Jiles saved in local quantity {h}
-      // BF is constant per element => 1 integration point is enough
-      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
-      Galerkin { [ -GetVariable[QuadraturePointIndex[]]{$bjiles} , {b} ]  ;
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
     }
   }
 }
