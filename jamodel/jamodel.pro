@@ -61,15 +61,15 @@ Function {
       Name "Input/Solver/Relative permeability at low fields"},
     epsMu = {1e-15,
       Name "Input/Solver/numerical epsiron of mu"},
-    Msat = {1.456e6,
+    Msat = {1.33e6,
       Name "Input/Solver/Saturation magnetization of the material [A/V]"},
-    a = {64.77,
+    a = {172.856,
       Name "Input/Solver/Quantifies domain wall density [A/m]"},
-    k = {7.645,
+    k = {232.652,
       Name "Input/Solver/Bloch interdomain coupling"},
-    c = {0.0,
+    c = {0.652,
       Name "Input/Solver/Magnetization reversibility"},
-    alpha = {9.8e-5,
+    alpha = {417e-6,
       Name "Input/Solver/Bloch interdomain coupling"}
   ];
 
@@ -148,9 +148,11 @@ FunctionSpace {
   }
   { Name BSpace ; Type Vector;
     BasisFunction {
-      { Name sex ; NameOfCoef aex ; Function BF_VolumeX ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
-      { Name sey ; NameOfCoef aey ; Function BF_VolumeY ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
-      { Name sez ; NameOfCoef aez ; Function BF_VolumeZ ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
+      { Name se; NameOfCoef he; Function BF_Edge;
+        Support MagnAnhyDomain; Entity EdgesOf[All, Not BndOmegaC]; }
+      // { Name sex ; NameOfCoef aex ; Function BF_VolumeX ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
+      // { Name sey ; NameOfCoef aey ; Function BF_VolumeY ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
+      // { Name sez ; NameOfCoef aez ; Function BF_VolumeZ ; Support MagnAnhyDomain ; Entity VolumesOf[All, Not BndOmegaC] ; }
     }
   }
 }
@@ -184,10 +186,17 @@ Formulation {
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
+
+      // h_Jiles saved in local quantity {h}
+      // BF is constant per element => 1 integration point is enough
+      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
+      Galerkin { [ -SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles} , {b} ]  ;
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
       
-      Galerkin { [ Dof{b} / $DTime , {h} ];
+      Galerkin { [( GetVariable[QuadraturePointIndex[]]{$bjiles} / $DTime) , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [-(SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles} / $DTime) , {h} ];
+      Galerkin { [ -{b}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { JacNL[ dbdh_Jiles[{h},{b},{h}-{h}[1]]{List[hyst_Fe]} * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
@@ -204,13 +213,6 @@ Formulation {
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
-
-      // h_Jiles saved in local quantity {h}
-      // BF is constant per element => 1 integration point is enough
-      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
-      Galerkin { [ -GetVariable[QuadraturePointIndex[]]{$bjiles} , {b} ]  ;
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
     }
   }
 }
