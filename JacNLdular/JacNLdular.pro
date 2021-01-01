@@ -78,14 +78,18 @@ Function {
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
-    (
-      Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
-      -m0*(mur0-1)^2*
-      Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
-             CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
-             CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
-    );
+  // dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
+  //   (
+  //     Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
+  //     -m0*(mur0-1)^2*
+  //     Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
+  //            CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
+  //            CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
+  //   );
+  dbdh[MagnAnhyDomain] = //($iter > 20) ? 
+  ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])); //:
+    // (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique
 }
 
 Jacobian {
