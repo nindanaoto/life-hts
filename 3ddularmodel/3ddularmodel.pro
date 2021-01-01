@@ -95,15 +95,17 @@ Function {
            CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
           ];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = // (Norm[$1]<epsMu)? TensorDiag[0,0,0]:
-    mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
-    (
-      Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
-      -m0*(mur0-1)^2*
-      Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
-             CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
-             CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
-    );
+  // dbdh[MagnAnhyDomain] = // (Norm[$1]<epsMu)? TensorDiag[0,0,0]:
+  //   mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
+  //   (
+  //     Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
+  //     -m0*(mur0-1)^2*
+  //     Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
+  //            CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
+  //            CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
+  //   );
+  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
   RotatePZ[] = Rotate[ Vector[$X,$Y,$Z+$2], 0, 0, $1 ];
 }
 
@@ -244,9 +246,9 @@ Resolution {
     Operation {
       //options for PETsC
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
-      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl"];
+      SetGlobalSolverOptions["-pc_type none -ksp_type bcgsl"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];  
 
       // create directory to store result files
