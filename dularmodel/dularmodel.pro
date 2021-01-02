@@ -78,14 +78,16 @@ Function {
              CompY[$1] * CompX[$1], CompY[$1]^2, CompY[$1] * CompZ[$1],
              CompZ[$1] * CompX[$1], CompZ[$1] * CompY[$1], CompZ[$1]^2];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
-    (
-      Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
-      -m0*(mur0-1)^2*
-      Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
-             CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
-             CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
-    );
+  // dbdh[MagnAnhyDomain] = mu0/(Norm[$1]*(m0+Norm[$1]*(mur0-1))^2+epsMu) *
+  //   (
+  //     Norm[$1]*(m0+Norm[$1]*(mur0-1))*(m0*(mur0-1)+m0+Norm[$1]*(mur0-1))*TensorDiag[1, 1, 1]
+  //     -m0*(mur0-1)^2*
+  //     Tensor[CompX[$1]*CompX[$1], CompY[$1]*CompX[$1], CompZ[$1]*CompX[$1],
+  //            CompX[$1]*CompY[$1], CompY[$1]*CompY[$1], CompZ[$1]*CompY[$1],
+  //            CompX[$1]*CompZ[$1], CompY[$1]*CompZ[$1], CompZ[$1]*CompZ[$1]]
+  //   );
+  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
 }
 
 Jacobian {
@@ -212,15 +214,15 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
-      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl"];  
-      // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-7"];
+      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_rtol 1.e-12"];  
+      SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
       // create directory to store result files
@@ -304,12 +306,12 @@ PostProcessing {
             In Omega; Jacobian Vol; } } }
       { Name dtb; Value{ Local{ [ mu[]* Dt[{h}] ] ;
             In Omega; Jacobian Vol; } } }
-      { Name I1 ; Value { Term { [ {I1} ] ;
-            In Cut ; } } }
-      { Name V1 ; Value { Term { [ {V1} ] ;
-            In Cut ; } } }
-      { Name Z1 ; Value { Term { [ {V1} / {I1} ] ;
-            In Cut ; } } }
+      // { Name I1 ; Value { Term { [ {I1} ] ;
+            // In Cut ; } } }
+      // { Name V1 ; Value { Term { [ {V1} ] ;
+            // In Cut ; } } }
+      // { Name Z1 ; Value { Term { [ {V1} / {I1} ] ;
+            // In Cut ; } } }
       { Name Losses ; Value { Integral { [ rho[{d h}] * {d h} * {d h}];
             In OmegaC ; Integration Int; Jacobian Vol; } } }
     }
@@ -329,9 +331,9 @@ PostOperation {
         File > "res/losses_filaments.txt"] ;
       Print[ Losses[LinOmegaC], OnGlobal, Format TimeTable,
         File > "res/losses_matrix.txt"] ;
-      Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
-      Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
-      Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
+      // Print[I1, OnRegion Cut, Format TimeTable, File "res/I1.pos"];
+      // Print[V1, OnRegion Cut, Format TimeTable, File "res/V1.pos"];
+      // Print[Z1, OnRegion Cut, Format TimeTable, File "res/Z1.pos"];
       Echo["General.Verbosity=5;", File "res/option.pos"];
     }
   }
