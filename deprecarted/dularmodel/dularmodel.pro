@@ -214,7 +214,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
-      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  
@@ -222,7 +222,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_rtol 1.e-12"];  
-      SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
+      // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
       // create directory to store result files

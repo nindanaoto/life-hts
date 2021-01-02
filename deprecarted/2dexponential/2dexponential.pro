@@ -1,4 +1,4 @@
-Include "JacNLdular_data.pro";
+Include "2dexponential_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -26,15 +26,19 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {7, Step 100,
+    Itot = {150,
       Name "Input/3Source/Total current [A]"},
-    Ec = {1e-4,
+    Ec = {1e-6,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
-    Jc = {3e8,
+    Jc0 = {3.48e9,
       Name "Input/4Materials/Critical current density [Am⁻²]"},
-    n = {30, Min 3, Max 40, Step 1,
+    n = {21, Min 3, Max 40, Step 1,
        Highlight "LightYellow",
       Name "Input/4Materials/Exponent (n) value"},
+    B0 = {1.09,
+      Name "Input/4Materials/Unit magnetic flux density [T]"},
+    a = {1.5,
+      Name "Input/4Materials/Exponent (a) value"},
     Freq = {50, Min 1, Max 100, Step 1,
       Name "Input/3Source/Frequency [Hz]"},
     periods = {1., Min 0.1, Max 2.0, Step 0.05,
@@ -51,7 +55,7 @@ Function {
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
-    iter_max = {30,
+    iter_max = {20,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
     visu = {0, Choices{0, 1}, AutoCheck 0,
       Name "Input/Solver/Visu", Label "Real-time visualization"},
@@ -64,16 +68,23 @@ Function {
   ];
 
   dt_max = adaptive ? dt_max : dt;
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],12];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
   rho[Copper] = 1 / cusigma;
 
   // power law E(J) = rho(J) * J, with rho(j) = Ec/Jc * (|J|/Jc)^(n-1)
-  rho[Filaments] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
+  Jc[Filaments] = Jc0 * Exp[-(mu0 * Norm[$1]/B0)^a];
+  rho[Filaments] = Ec / Jc[$1] * (Norm[$2]/Jc[$1])^(n - 1);
   dEdJ[Filaments] =
-    Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
-    Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
+    Ec/(Jc[$1]^3)*(Norm[$2]/Jc[$1])^(n-3)*((n-1)*SquDyadicProduct[$2]+SquNorm[$2]*TensorDiag[1,1,1]);
+  dEdH[Filaments] =
+    mu0*Ec*a*n*(mu0*Norm[$1]/B0)^(a-1)*(Norm[$2]/Jc[$1])^(n-1)/(B0*Norm[$1]*Jc[$1]+epsMu)*
+    Tensor[CompX[$1]*CompX[$2], CompY[$1]*CompX[$2], CompZ[$1]*CompX[$2],
+           CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
+           CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
+          ];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
   dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]); 
@@ -170,7 +181,7 @@ Formulation {
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ dbdh[{h}] * Dof{h} / $DTime , {h}];
+      Galerkin { JacNL[ (1.0/$RelaxFac)*dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -179,9 +190,11 @@ Formulation {
       Galerkin { [ rho[] * Dof{d h} , {d h} ];
         In LinOmegaC; Integration Int; Jacobian Vol;  }
 
-      Galerkin { [ rho[{d h}] * {d h} , {d h} ];
+      Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ dEdJ[{d h}] * Dof{d h} , {d h} ];
+      Galerkin { JacNL[ (1.0/$RelaxFac)*dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
+        In Filaments; Integration Int; Jacobian Vol;  }
+      Galerkin { JacNL[ (1.0/$RelaxFac)*dEdH[{h},{d h}] * Dof{h} , {h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
@@ -220,9 +233,6 @@ Resolution {
 
       Evaluate[$iter = 0];
       
-      // initialize relaxation factor
-      Evaluate[$relaxFactor = 1];
-
       // initialize the solution (initial condition)
       InitSolution[A];
 
@@ -230,7 +240,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -238,7 +248,7 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
