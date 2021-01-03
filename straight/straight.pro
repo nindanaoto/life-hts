@@ -7,7 +7,7 @@ Group {
   BndMatrix = Region[BND_WIRE];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
   MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, CUT}];
+  MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 

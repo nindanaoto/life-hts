@@ -3,17 +3,17 @@ Include "JacNLdular_data.pro";
 Group {
   Air = Region[AIR];
   AirInf = Region[INF];
-  LinOmegaC = Region[{CU,FE}];
   BndMatrix = Region[BND_WIRE];
+  BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
+  LinOmegaC = Region[{CU,FE}];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
   MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, CUT}];
+  MagnLinDomain = Region[{CU, Filaments , Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
   OmegaC = Region[{LinOmegaC,Filaments}]; // conducting domain
   OmegaCC = Region[{Air, AirInf}]; // non-conducting domain
-  BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   Cut = Region[CUT]; // thick cut
   Omega = Region[{OmegaC, OmegaCC}]; // full domain
 }
@@ -206,7 +206,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
-      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl"];  
+      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_abstol 1.e-13"];  
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
