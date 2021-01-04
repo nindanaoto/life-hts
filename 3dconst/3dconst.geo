@@ -1,6 +1,6 @@
 // SetFactory("OpenCASCADE");
 // Include cross data
-Include "3ddularmodel_data.pro";
+Include "3dconst_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
