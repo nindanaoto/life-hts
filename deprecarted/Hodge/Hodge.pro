@@ -1,4 +1,4 @@
-Include "3ddularmodel_data.pro";
+Include "Hodge_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -7,7 +7,7 @@ Group {
   BndMatrix = Region[BND_WIRE];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
   MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments, Air, AirInf}];
+  MagnLinDomain = Region[{CU, Filaments}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
@@ -50,7 +50,7 @@ Function {
       Name "Input/Solver/0Periods to simulate"},
     time0 = 0, // initial time
     time1 = periods * (1 / Freq), // final time
-    dt = {2e-6, Min 1e-7, Max 1e-3, Step 1e-6,
+    dt = {2e-4, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
     adaptive = {1, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
@@ -83,12 +83,8 @@ Function {
   Jc[Filaments] = Jc0 * Exp[-(mu0 * Norm[$1]/B0)^a];
   rho[Filaments] = Ec / Jc[$1] * (Norm[$2]/Jc[$1])^(n - 1);
   dEdJ[Filaments] =
-    Ec/Jc[$1]^3*(Norm[$2]/Jc[$1])^(n-3)*
-    Tensor[(CompX[$2]^2)*(n-1)+SquNorm[$2], CompX[$2]*CompY[$2]*(n-1), CompX[$2]*CompZ[$2]*(n-1),
-           CompY[$2]*CompX[$2]*(n-1), CompY[$2]^2*(n-1)+SquNorm[$2], CompY[$2]*CompZ[$2]*(n-1),
-           CompZ[$2]*CompX[$2]*(n-1), CompZ[$2]*CompY[$2]*(n-1), (CompZ[$2]^2)*(n-1)+SquNorm[$2]
-          ];
-  dEdH[Filaments] = //(Norm[$1]<epsMu)? TensorDiag[0,0,0]:
+    Ec/(Jc[$1]^3)*(Norm[$2]/Jc[$1])^(n-3)*((n-1)*SquDyadicProduct[$2]+SquNorm[$2]*TensorDiag[1,1,1]);
+  dEdH[Filaments] = 
     mu0*Ec*a*n*(mu0*Norm[$1]/B0)^(a-1)*(Norm[$2]/Jc[$1])^(n-1)/(B0*Norm[$1]*Jc[$1]+epsMu)*
     Tensor[CompX[$1]*CompX[$2], CompY[$1]*CompX[$2], CompZ[$1]*CompX[$2],
            CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
@@ -197,14 +193,14 @@ Formulation {
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { DtDof [ Hodge[mu[] * Dof{h}] , Hodge[{h}] ];
+        In MagnLinDomain; Integration Int; Jacobian Vol;  }
       
       Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
+      Galerkin { JacNL[ dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -215,14 +211,10 @@ Formulation {
 
       Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
+      Galerkin { JacNL[ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dEdJ[{h},{d h}] * {d h} , {d h} ];
-        In Filaments ; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dEdH[{h},{d h}] * Dof{h} , {h} ];
+      Galerkin { JacNL[ dEdH[{h},{d h}] * Dof{h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dEdH[{h},{d h}] * {h} , {h} ];
-        In Filaments ; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
     }
@@ -262,16 +254,16 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        Generate[A]; Solve[A]; Evaluate[ $syscount = $syscount + 1 ];
-        Generate[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
+        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
 
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          Solve[A]; Evaluate[ $syscount = $syscount + 1 ];
-          Generate[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
+          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
         }
