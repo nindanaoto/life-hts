@@ -26,7 +26,7 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {70, 
+    Itot = {300, 
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-6,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
@@ -47,7 +47,7 @@ Function {
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
-    tol_abs = {1e-9,
+    tol_abs = {1e-7,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
@@ -309,7 +309,7 @@ PostOperation {
       Echo["General.Verbosity=3;", File "res/option.pos"];
       Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
       Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
+      // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
       Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
         File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
       Print[ Losses[Filaments], OnGlobal, Format TimeTable,

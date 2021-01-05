@@ -163,7 +163,7 @@ Formulation {
   { Name MagDynH; Type FemEquation;
     Quantity {
       { Name h; Type Local; NameOfSpace HSpace; }
-      // { Name b; Type Local; NameOfSpace BSpace; }//Previous step's B
+      { Name b; Type Local; NameOfSpace BSpace; }//Previous step's B
       { Name I1; Type Global; NameOfSpace HSpace[Current1]; }
       { Name V1; Type Global; NameOfSpace HSpace[Voltage1]; }
     }
@@ -191,23 +191,16 @@ Formulation {
 
       // h_Jiles saved in local quantity {h}
       // BF is constant per element => 1 integration point is enough
-      // Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
-      //   In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
-      // Galerkin { [ -(SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles}) , {b} ];
-      //   In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
+      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
+      Galerkin { [ -(SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles}) , {b} ];
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
 
-      // Galerkin { [GetVariable[QuadraturePointIndex[]]{$bjiles} / $DTime , {h} ];
-      //   In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      // Galerkin { [ -{b}[1] / $DTime , {h} ];
-      //   In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      // Galerkin { JacNL[ (1.0/$RelaxFac)* dbdh_Jiles[{h},{b},{h}-{h}[1]]{List[hyst_Fe]} * Dof{h} / $DTime , {h}];
-      //   In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      
-      Galerkin { [SetVariable[b_Jiles[GetVariable[QuadraturePointIndex[],($TimeStep+1)%2]{$bjiles},{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[],$TimeStep%2]{$bjiles} / $DTime , {h} ];
+      Galerkin { [GetVariable[QuadraturePointIndex[]]{$bjiles} / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ -GetVariable[QuadraturePointIndex[],($TimeStep+1)%2]{$bjiles} / $DTime , {h} ];
+      Galerkin { [ -{b}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ (1.0/$RelaxFac)* dbdh_Jiles[{h},GetVariable[QuadraturePointIndex[],$TimeStep%2]{$bjiles},{h}-{h}[1]]{List[hyst_Fe]} * Dof{h} / $DTime , {h}];
+      Galerkin { JacNL[ dbdh_Jiles[{h},{b},{h}-{h}[1]]{List[hyst_Fe]} * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -218,7 +211,7 @@ Formulation {
 
       Galerkin { [ rho[{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ (1.0/$RelaxFac)*dEdJ[{d h}] * Dof{d h} , {d h} ];
+      Galerkin { JacNL[ dEdJ[{d h}] * Dof{d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
@@ -260,11 +253,6 @@ Resolution {
       // initialize relaxation factor
       Evaluate[$relaxFactor = 1];
 
-      Evaluate[$bjiles_0_0 = Vector[0,0,0]];
-      Evaluate[$bjiles_1_0 = Vector[0,0,0]];
-      Evaluate[$bjiles_2_0 = Vector[0,0,0]];
-      Evaluate[$bjiles_3_0 = Vector[0,0,0]];
-
       // initialize the solution (initial condition)
       InitSolution[A];
 
@@ -272,7 +260,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 1]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -280,11 +268,10 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 1]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
-          Print[{CompX[$bjiles_0_0],CompY[$bjiles_0_0],CompZ[$bjiles_0_0]}, Format "%14.12e %14.12e %14.12e"];
         }
         // save and visualize the solution if converged...
         Test[ $iter < iter_max && $res / $res0 <= 1 ]{

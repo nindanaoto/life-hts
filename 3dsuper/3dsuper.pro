@@ -82,13 +82,8 @@ Function {
   //$1 = H,$2 = J
   Jc[Filaments] = Jc0 * Exp[-(mu0 * Norm[$1]/B0)^a];
   rho[Filaments] = Ec / Jc[$1] * (Norm[$2]/Jc[$1])^(n - 1);
-  dEdJ[Filaments] =
-    Ec/Jc[$1]^3*(Norm[$2]/Jc[$1])^(n-3)*
-    Tensor[(CompX[$2]^2)*(n-1)+SquNorm[$2], CompX[$2]*CompY[$2]*(n-1), CompX[$2]*CompZ[$2]*(n-1),
-           CompY[$2]*CompX[$2]*(n-1), CompY[$2]^2*(n-1)+SquNorm[$2], CompY[$2]*CompZ[$2]*(n-1),
-           CompZ[$2]*CompX[$2]*(n-1), CompZ[$2]*CompY[$2]*(n-1), (CompZ[$2]^2)*(n-1)+SquNorm[$2]
-          ];
-  dEdH[Filaments] = //(Norm[$1]<epsMu)? TensorDiag[0,0,0]:
+  dEdJ[Filaments] = Ec/(Jc[$1]^3)*(Norm[$2]/Jc[$1])^(n-3)*((n-1)*SquDyadicProduct[$2]+SquNorm[$2]*TensorDiag[1,1,1]);
+  dEdH[Filaments] =
     mu0*Ec*a*n*(mu0*Norm[$1]/B0)^(a-1)*(Norm[$2]/Jc[$1])^(n-1)/(B0*Norm[$1]*Jc[$1]+epsMu)*
     Tensor[CompX[$1]*CompX[$2], CompY[$1]*CompX[$2], CompZ[$1]*CompX[$2],
            CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
