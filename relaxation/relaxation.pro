@@ -1,4 +1,4 @@
-Include "2Dsuper_data.pro";
+Include "relaxation_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -7,7 +7,8 @@ Group {
   BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   LinOmegaC = Region[{CU,FE}];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
-  MagnLinDomain = Region[{CU, Filaments, FE, Air, AirInf}];
+  MagnAnhyDomain = Region[FE];
+  MagnLinDomain = Region[{CU, Filaments , Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
@@ -25,7 +26,7 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {250, 
+    Itot = {300, 
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-6,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
@@ -63,6 +64,7 @@ Function {
   ];
 
   dt_max = adaptive ? dt_max : dt;
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],12];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
@@ -73,12 +75,15 @@ Function {
   dEdJ[Filaments] =
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
     Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
+  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
+  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]); 
 }
 
 Jacobian {
   { Name Vol ;
     Case {
-      // { Region AirInf ; Jacobian VolCylShell{R_air, R_inf} ; }
+      { Region AirInf ; Jacobian VolCylShell{R_air, R_inf} ; }
       { Region All ; Jacobian Vol ; }
     }
   }
@@ -161,6 +166,13 @@ Formulation {
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
+      
+      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
@@ -195,6 +207,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 1500"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_abstol 1.e-13"];  
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
@@ -219,7 +232,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -227,7 +240,7 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
