@@ -82,7 +82,7 @@ Function {
 Jacobian {
   { Name Vol ;
     Case {
-      { Region AirInf ; Jacobian VolCylShell{R_air, R_inf} ; }
+      // { Region AirInf ; Jacobian VolCylShell{R_air, R_inf} ; }
       { Region All ; Jacobian Vol ; }
     }
   }
@@ -200,6 +200,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
       SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 1500"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  

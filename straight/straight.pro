@@ -330,10 +330,10 @@ PostOperation {
   { Name MagDynH ; NameOfPostProcessing MagDynH ; LastTimeStepOnly visu ;
     Operation {
       // Echo["General.Verbosity=3;", File "res/option.pos"];
-      // Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
-      Print[ h, OnElementsOf Omega , Format TimeTable, File "res/h.timetable", Name "h [Am⁻1]" ];
-      // Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
+      Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
+      // Print[ h, OnElementsOf Omega , Format TimeTable, File "res/h.timetable", Name "h [Am⁻1]" ];
+      Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
+      // Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
       // Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [N/C]" ];
       // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
       // Print[ norm_j, OnElementsOf OmegaC , Format TimeTable, File "res/norm_j.timetable", Name "|j| [Am⁻²]" ];

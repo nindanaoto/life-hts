@@ -234,7 +234,8 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
       // SetGlobalSolverOptions["-pc_type none -ksp_type bcgsl"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-13 -ksp_abstol 1.e-13 -ksp_max_it 2000"];
       // SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];  
 
       // create directory to store result files

@@ -1,4 +1,4 @@
-Include "2Dsuper_data.pro";
+Include "2Dhybrid_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -7,7 +7,8 @@ Group {
   BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   LinOmegaC = Region[{CU,FE}];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
-  MagnLinDomain = Region[{CU, Filaments, FE, Air, AirInf}];
+  MagnAnhyDomain = Region[FE];
+  MagnLinDomain = Region[{CU, Filaments , Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
@@ -25,7 +26,7 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {250, 
+    Itot = {300, 
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-6,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
@@ -73,6 +74,10 @@ Function {
   dEdJ[Filaments] =
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
     Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
+  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
+  dbdh[MagnAnhyDomain] = ($iter > 8) ? ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])) :
+    (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique 
 }
 
 Jacobian {
@@ -161,6 +166,13 @@ Formulation {
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
+      
+      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
