@@ -198,9 +198,7 @@ Formulation {
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
+      Galerkin { JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -211,14 +209,10 @@ Formulation {
 
       Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
+      Galerkin { JacNL[ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dEdJ[{h},{d h}] * {d h} , {d h} ];
-        In Filaments ; Integration Int; Jacobian Vol;  }
-      Galerkin { [ dEdH[{h},{d h}] * Dof{h} , {h} ];
+      Galerkin { JacNL[ dEdH[{h},{d h}] * Dof{h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - dEdH[{h},{d h}] * {h} , {h} ];
-        In Filaments ; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
     }
