@@ -1,4 +1,4 @@
-Include "3ddularmodel_data.pro";
+Include "3drelaxation_data.pro";
 
 Group {
   Air = Region[AIR];
