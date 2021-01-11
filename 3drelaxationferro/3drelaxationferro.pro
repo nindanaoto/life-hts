@@ -82,11 +82,6 @@ Function {
 
   // power law E(J) = rho(J) * J, with rho(j) = Ec/Jc * (|J|/Jc)^(n-1), Jc = Jc0 * exp(-(B/B0)^a)
   //$1 = H,$2 = J
-    mu0*Ec*a*n*(mu0*Norm[$1]/B0)^(a-1)*(Norm[$2]/Jc[$1])^(n-1)/(B0*Norm[$1]*Jc[$1]+epsMu)*
-    Tensor[CompX[$1]*CompX[$2], CompY[$1]*CompX[$2], CompZ[$1]*CompX[$2],
-           CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
-           CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
-          ];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
   dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);

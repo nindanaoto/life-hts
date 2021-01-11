@@ -89,9 +89,6 @@ Function {
            CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
            CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
           ];
-  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
-    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
   RotatePZ[] = Rotate[ Vector[$X,$Y,$Z+$2], 0, 0, $1 ];
 }
 
