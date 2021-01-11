@@ -31,19 +31,15 @@ Function {
       Name "Input/4Materials/Copper conductivity [Sm⁻¹]"},
     fesigma = {1e7,
       Name "Input/4Materials/Ferrum conductivity [Sm⁻¹]"},
-    Itot = {300,
+    Itot = {300, 
       Name "Input/3Source/Total current [A]"},
     Ec = {1e-6,
       Name "Input/4Materials/Critical electric field [Vm⁻¹]"},
-    Jc0 = {3.48e9,
+    Jc = {3.48e9,
       Name "Input/4Materials/Critical current density [Am⁻²]"},
     n = {21, Min 3, Max 40, Step 1,
        Highlight "LightYellow",
       Name "Input/4Materials/Exponent (n) value"},
-    B0 = {1.09,
-      Name "Input/4Materials/Unit magnetic flux density [T]"},
-    a = {1.5,
-      Name "Input/4Materials/Exponent (a) value"},
     Freq = {50, Min 1, Max 100, Step 1,
       Name "Input/3Source/Frequency [Hz]"},
     periods = {1., Min 0.1, Max 2.0, Step 0.05,
@@ -52,11 +48,11 @@ Function {
     time1 = periods * (1 / Freq), // final time
     dt = {2e-4, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
-    adaptive = {1, Choices{0,1},
+    adaptive = {0, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
-    tol_abs = {1e-9,
+    tol_abs = {1e-7,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
@@ -81,15 +77,10 @@ Function {
 
   // power law E(J) = rho(J) * J, with rho(j) = Ec/Jc * (|J|/Jc)^(n-1), Jc = Jc0 * exp(-(B/B0)^a)
   //$1 = H,$2 = J
-  Jc[Filaments] = Jc0 * Exp[-(mu0 * Norm[$1]/B0)^a];
-  rho[Filaments] = Ec / Jc[$1] * (Norm[$2]/Jc[$1])^(n - 1);
-  dEdJ[Filaments] = Ec/(Jc[$1]^3)*(Norm[$2]/Jc[$1])^(n-3)*((n-1)*SquDyadicProduct[$2]+SquNorm[$2]*TensorDiag[1,1,1]);
-  dEdH[Filaments] =
-    mu0*Ec*a*n*(mu0*Norm[$1]/B0)^(a-1)*(Norm[$2]/Jc[$1])^(n-1)/(B0*Norm[$1]*Jc[$1]+epsMu)*
-    Tensor[CompX[$1]*CompX[$2], CompY[$1]*CompX[$2], CompZ[$1]*CompX[$2],
-           CompX[$1]*CompY[$2], CompY[$1]*CompY[$2], CompZ[$1]*CompY[$2],
-           CompX[$1]*CompZ[$2], CompY[$1]*CompZ[$2], CompZ[$1]*CompZ[$2]
-          ];
+  rho[Filaments] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
+  dEdJ[Filaments] =
+    Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
+    Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];;
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
   dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
@@ -210,8 +201,6 @@ Formulation {
       Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
       Galerkin { JacNL[ (1/$RelaxFac) * dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
-        In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ (1/$RelaxFac) * dEdH[{h},{d h}] * Dof{h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }

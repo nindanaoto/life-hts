@@ -73,7 +73,7 @@ Function {
   ];
 
   dt_max = adaptive ? dt_max : dt;
-  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],12];
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],13];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
