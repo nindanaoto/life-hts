@@ -1,4 +1,4 @@
-Include "relaxation_data.pro";
+Include "relaxationsuper_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -7,8 +7,7 @@ Group {
   BndOmegaC = Region[BndMatrix]; // boundary of conducting domain
   LinOmegaC = Region[{CU,FE}];
   Filaments = Region[{FILAMENT0,FILAMENT1,FILAMENT2,FILAMENT3,FILAMENT4,FILAMENT5,FILAMENT6,FILAMENT7,FILAMENT8,FILAMENT9}];
-  MagnAnhyDomain = Region[FE];
-  MagnLinDomain = Region[{CU, Filaments , Air, AirInf}];
+  MagnLinDomain = Region[{CU, Filaments, FE, Air, AirInf}];
   Ferrite = Region[FE];
   Copper = Region[CU];
 
@@ -75,9 +74,6 @@ Function {
   dEdJ[Filaments] =
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
     Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
-  mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
-    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]); 
 }
 
 Jacobian {
@@ -166,13 +162,6 @@ Formulation {
       //
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
-      
-      Galerkin { [ mu[{h}] * {h} / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin {  JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
-        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
       //  In Omega; Integration Int; Jacobian Vol;  }
@@ -208,7 +197,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
       // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 10000"];
-      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type dgmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_abstol 1.e-13"];  
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
