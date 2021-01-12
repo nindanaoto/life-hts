@@ -80,7 +80,7 @@ Function {
   rho[Filaments] = Ec / Jc * (Norm[$1]/Jc)^(n - 1);
   dEdJ[Filaments] =
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
-    Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];;
+    Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
   dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
@@ -189,7 +189,7 @@ Formulation {
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ (1/$RelaxFac) * dbdh[{h}] * Dof{h} / $DTime , {h}];
+      Galerkin { JacNL[ dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -200,7 +200,7 @@ Formulation {
 
       Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[ (1/$RelaxFac) * dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
+      Galerkin { JacNL[ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
@@ -321,10 +321,10 @@ PostOperation {
   { Name MagDynH ; NameOfPostProcessing MagDynH ; LastTimeStepOnly visu ;
     Operation {
       // Echo["General.Verbosity=3;", File "res/option.pos"];
-      // Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
-      Print[ h, OnElementsOf Omega , Format TimeTable, File "res/h.timetable", Name "h [Am⁻1]" ];
-      // Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
+      Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
+      // Print[ h, OnElementsOf Omega , Format TimeTable, File "res/h.timetable", Name "h [Am⁻1]" ];
+      Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
+      // Print[ j, OnElementsOf OmegaC , Format TimeTable, File "res/j.timetable", Name "j [Am⁻²]" ];
       // Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [N/C]" ];
       // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
       // Print[ norm_j, OnElementsOf OmegaC , Format TimeTable, File "res/norm_j.timetable", Name "|j| [Am⁻²]" ];
