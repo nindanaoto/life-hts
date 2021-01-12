@@ -1,17 +1,19 @@
-// SetFactory("OpenCASCADE");
+SetFactory("OpenCASCADE");
 // Include cross data
-Include "relaxstraightconst_data.pro";
+Include "relaxationferro_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
 // Mesh size
-DefineConstant [meshFactor = {8, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
+DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
 DefineConstant [LcAir = meshFactor*LcCyl]; // Mesh size in air shell [m]
 DefineConstant [LcInf = meshFactor*LcCyl]; // Mesh size in external air shell [m]
 DefineConstant [transfiniteQuadrangular = {0, Choices{0,1}, Name "Input/2Mesh/3Regular quadrangular mesh?"}];
+DefineConstant [NumCore = 10];
+DefineConstant [CoreGapAngle = 2*Pi/NumCore - Angle_Su];
 
 centerp = newp; Point(centerp) = {0, 0, 0, LcCyl};
 
@@ -67,15 +69,6 @@ cunil3 = newl; Circle(cunil3) = {cunip3, centerp, cunip0};
 
 cunill = newll; Line Loop(cunill) = {cunil0, cunil1, cunil2, cunil3}; 
 
-// infairl0 = newl; Line(infairl0) = {airp0,infp0};
-// infairl1 = newl; Line(infairl1) = {airp1,infp1};
-// infairl2 = newl; Line(infairl2) = {airp2,infp2};
-// infairl3 = newl; Line(infairl3) = {airp3,infp3};
-// infll0 = newll; Line Loop(infll0) = {infairl0,infl0,-infairl1,-airl0};
-// infll1 = newll; Line Loop(infll1) = {infairl1,infl1,-infairl2,-airl1};
-// infll2 = newll; Line Loop(infll2) = {infairl2,infl2,-infairl3,-airl2};
-// infll3 = newll; Line Loop(infll3) = {infairl3,infl3,-infairl0,-airl3};
-
 // Su cores
 sulls[] = {}; //line loops of filaments
 For i In {0:(NumCore-1)}
@@ -96,6 +89,7 @@ For i In {0:(NumCore-1)}
 
     sus~{i} = news; Plane Surface(sus~{i}) = {sull~{i}};
 
+    Physical Surface(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {sus~{i}};
 EndFor
 
 //Fe
@@ -120,59 +114,18 @@ fels[] += fel~{i};
 
 fell = newll; Line Loop(fell) = {fels[]};
 
-// infs0 = news; Plane Surface(infs0) = {infll0}; //AIR_OUT
-// infs1 = news; Plane Surface(infs1) = {infll1}; //AIR_OUT
-// infs2 = news; Plane Surface(infs2) = {infll2}; //AIR_OUT
-// infs3 = news; Plane Surface(infs3) = {infll3}; //AIR_OUT
-
 infs = news; Plane Surface(infs) = {infll,airll}; //AIR_OUT
-
 airs = news; Plane Surface(airs) = {airll,wirell}; //AIR
 cunis = news; Plane Surface(cunis) = {wirell,cunill}; //CUNI
 fes = news; Plane Surface(fes) = {cunill,fell,sulls[]}; //FE
 cus = news; Plane Surface(cus) = {fell}; //CU
 
-suends[] = {};
-subodys[] = {};
-//Periodic is forced by Extrude
-For i In {0:(NumCore-1)}
-    suout~{i}[] = Extrude{0,0,SlicePitch}{Surface{sus~{i}};Layers{NumLayers};};
-    suends[] += suout~{i}[0];
-    subodys[] += suout~{i}[1];
-    Physical Volume(Sprintf("Super Conductor Core %g",i), FILAMENT0+i) = {suout~{i}[1]};
-EndFor
-
-infout[] = Extrude{0,0,SlicePitch}{Surface{infs};Layers{NumLayers};};
-
-airout[] = Extrude{0,0,SlicePitch}{Surface{airs};Layers{NumLayers};};
-cuniout[] = Extrude{0,0,SlicePitch}{Surface{cunis};Layers{NumLayers};};
-feout[] = Extrude{0,0,SlicePitch}{Surface{fes};Layers{NumLayers};};
-cuout[] = Extrude{0,0,SlicePitch}{Surface{cus};Layers{NumLayers};};
-
-// Physical Volume("Spherical shell", INF) = {infout0[1],infout2[1]};
-Physical Volume("Spherical shell", INF) = {infout[1]};
-Physical Volume("Air", AIR) = {airout[1]};
-Physical Volume("Ferrium", FE) = {cuniout[1],feout[1]};
-Physical Volume("Cupper", CU) = {cuout[1]};
+Physical Surface("Spherical shell", INF) = {infs};
+Physical Surface("Air", AIR) = {airs};
+Physical Surface("Ferrium", FE) = {cunis,fes};
+Physical Surface("Cupper", CU) = {cus};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
-Printf("boundary surface = %g", cuniout[2]);
-Physical Surface("Wire boundary", BND_WIRE) = {cuniout[2],cuniout[3],cuniout[4],cuniout[5]};
-
-
-// lowers[] = {infs0,infs1,infs2,infs3,airs,cunis,fes,cus};
-// uppers[] = {infout0[0],infout1[0],infout2[0],infout3[0],airout[0],cuniout[0],feout[0],cuout[0]};
-
-lowers[] = {infs,airs,cunis,fes,cus};
-uppers[] = {infout[0],airout[0],cuniout[0],feout[0],cuout[0]};
-For i In {0:(NumCore-1)}
-    lowers[] += sus~{i};
-    uppers[] += suout~{i}[0];
-EndFor
-
-Physical Surface("Lower Surface", LOWERSURFACE) = {lowers[]};
-Physical Surface("Upper Surface", UPPERSURFACE) = {uppers[]};
-
-Geometry.NumSubEdges = 1000;
+Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
 
 Cohomology(1){{AIR,INF},{}};

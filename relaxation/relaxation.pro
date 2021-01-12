@@ -47,7 +47,7 @@ Function {
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
-    tol_abs = {1e-7,
+    tol_abs = {1e-8,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
