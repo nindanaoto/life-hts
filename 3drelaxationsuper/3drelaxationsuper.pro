@@ -57,7 +57,7 @@ Function {
       Name "Input/Solver/2Maximum time step [s]"},
     tol_abs = {1e-9,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
-    tol_rel = {1e-6,
+    tol_rel = {1e-9,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
     iter_max = {30,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
