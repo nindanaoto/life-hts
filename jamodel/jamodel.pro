@@ -49,7 +49,7 @@ Function {
       Name "Input/Solver/2Maximum time step [s]"},
     tol_abs = {1e-9,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
-    tol_rel = {1e-6,
+    tol_rel = {1e-9,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
     iter_max = {50,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
@@ -76,7 +76,7 @@ Function {
   dt_max = adaptive ? dt_max : dt;
   hyst_Fe = { Msat, a, k, c, alpha};
   RelaxFac_Lin = LinSpace[1,0.1,10];
-  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],12];
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],13];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
@@ -148,10 +148,10 @@ FunctionSpace {
         EntityType GroupsOfEdgesOf ; NameOfConstraint Voltage ; }
     }
   }
-  { Name BSpace ; Type Form1;
+  { Name BSpace ; Type Form2;
     BasisFunction {
-      { Name sf; NameOfCoef bf; Function BF_Edge;
-        Support MagnAnhyDomain; Entity EdgesOf[All, Not BndOmegaC]; }
+      { Name sf; NameOfCoef bf; Function BF_Facet;
+        Support MagnAnhyDomain; Entity FacetsOf[All, Not BndOmegaC]; }
       // { Name sex ; NameOfCoef aex ; Function BF_VolumeX ; Support MagnAnhyDomain ; Entity VolumesOf[MagnAnhyDomain] ; }
       // { Name sey ; NameOfCoef aey ; Function BF_VolumeY ; Support MagnAnhyDomain ; Entity VolumesOf[MagnAnhyDomain] ; }
       // { Name sez ; NameOfCoef aez ; Function BF_VolumeZ ; Support MagnAnhyDomain ; Entity VolumesOf[MagnAnhyDomain] ; }
@@ -189,14 +189,7 @@ Formulation {
       Galerkin { DtDof [ mu[] * Dof{h} , {h} ];
         In MagnLinDomain; Integration Int; Jacobian Vol;  }
 
-      // h_Jiles saved in local quantity {h}
-      // BF is constant per element => 1 integration point is enough
-      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
-      Galerkin { [ -(SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles}) , {b} ];
-        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
-
-      Galerkin { [GetVariable[QuadraturePointIndex[]]{$bjiles} / $DTime , {h} ];
+      Galerkin { [ SetVariable[b_Jiles[{b}[1],{h}[1],{h}]{List[hyst_Fe]},QuadraturePointIndex[]]{$bjiles}/ $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ -{b}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
@@ -215,6 +208,13 @@ Formulation {
         In Filaments; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
+
+      // h_Jiles saved in local quantity {h}
+      // BF is constant per element => 1 integration point is enough
+      Galerkin { [ Dof{b}   , {b} ]  ; // saving h_Jiles in local quantity h
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
+      Galerkin { [ -(GetVariable[QuadraturePointIndex[]]{$bjiles}) , {b} ];
+        In MagnAnhyDomain ; Jacobian Vol ; Integration Int; }
     }
   }
 }
@@ -260,7 +260,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -268,7 +268,7 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];

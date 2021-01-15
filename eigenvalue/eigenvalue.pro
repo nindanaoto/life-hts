@@ -171,7 +171,9 @@ Formulation {
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin {  JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
+      Galerkin { [ dbdh[{h}] * Dof{h} / $DTime , {h}];
+        In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
+      Galerkin { [ - dbdh[{h}] * {h}  / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -180,10 +182,12 @@ Formulation {
       Galerkin { [ rho[] * Dof{d h} , {d h} ];
         In LinOmegaC; Integration Int; Jacobian Vol;  }
 
-      Galerkin { [ rho[{d h}] * {d h} , {d h} ];
+      Galerkin { [ rho[{h},{d h}] * {d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[dEdJ[{d h}] * Dof{d h} , {d h} ];
+      Galerkin { [ dEdJ[{h},{d h}] * Dof{d h} , {d h} ];
         In Filaments; Integration Int; Jacobian Vol;  }
+      Galerkin { [ - dEdJ[{h},{d h}] * {d h} , {d h} ];
+        In Filaments ; Integration Int; Jacobian Vol;  }
 
       GlobalTerm { [ Dof{V1} , {I1} ] ; In Cut ; }
     }
@@ -232,8 +236,8 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
-        GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
+        Generate[A]; Solve[A]; Evaluate[ $syscount = $syscount + 1 ];
+        Generate[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
         
@@ -242,8 +246,8 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
-          GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
+          Solve[A]; Evaluate[ $syscount = $syscount + 1 ];
+          Generate[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
         }

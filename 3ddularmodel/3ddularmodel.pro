@@ -52,7 +52,7 @@ Function {
     time1 = periods * (1 / Freq), // final time
     dt = {2e-6, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
-    adaptive = {1, Choices{0,1},
+    adaptive = {0, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
