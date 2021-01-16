@@ -1,6 +1,6 @@
 // SetFactory("OpenCASCADE");
 // Include cross data
-Include "straightferro_data.pro";
+Include "relaxstraightsuper_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius

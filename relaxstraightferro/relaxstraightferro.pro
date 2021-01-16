@@ -1,4 +1,4 @@
-Include "straightferro_data.pro";
+Include "relaxstraightferro_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -52,13 +52,13 @@ Function {
     time1 = periods * (1 / Freq), // final time
     dt = {2e-4, Min 1e-7, Max 1e-3, Step 1e-6,
       Name "Input/Solver/1Time step [s]"}
-    adaptive = {1, Choices{0,1},
+    adaptive = {0, Choices{0,1},
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
     tol_abs = {1e-9,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
-    tol_rel = {1e-6,
+    tol_rel = {1e-9,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
     iter_max = {30,
       Name "Input/Solver/Maximum number of nonlinear iterations"},
@@ -73,6 +73,7 @@ Function {
   ];
 
   dt_max = adaptive ? dt_max : dt;
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],13];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
@@ -82,6 +83,7 @@ Function {
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
   dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
     - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]);
+  RotatePZ[] = Rotate[ Vector[$X,$Y,$Z+$2], 0, 0, $1 ];
 }
 
 Jacobian {
@@ -211,6 +213,7 @@ Resolution {
       // SetGlobalSolverOptions["-pc_type none -ksp_type bcgsl"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];
       SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-13 -ksp_abstol 1.e-13 -ksp_max_it 2000"];
       // SetGlobalSolverOptions["-ksp_type gcr -pc_type gamg"];  
 
       // create directory to store result files
@@ -233,7 +236,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -241,7 +244,7 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
