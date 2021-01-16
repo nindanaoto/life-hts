@@ -206,7 +206,7 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
-      SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 1500"];
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-15 -ksp_abstol 1.e-14 -ksp_max_it 1500"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_abstol 1.e-13"];  
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
