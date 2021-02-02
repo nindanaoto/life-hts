@@ -15,7 +15,7 @@ Fe_Depression = {27e-6, Visible changeGeometry, Name "Input/1Geometry/Ferrite de
 ];
 
 // ---- Mesh parameters ----
-DefineConstant [meshMult = {0.01, Name "Input/2Mesh/1Mesh size multiplier (-)"}]; // Multiplier [-] of a default mesh size distribution
+DefineConstant [meshMult = {0.02, Name "Input/2Mesh/1Mesh size multiplier (-)"}]; // Multiplier [-] of a default mesh size distribution
 
 // ---- Constant definition for regions ----
 AIR = 1000;

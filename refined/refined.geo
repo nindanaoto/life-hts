@@ -5,7 +5,7 @@ Include "refined_data.pro";
 // Interactive settings
 //R = W/2; // Radius
 // Mesh size
-DefineConstant [meshFactor = {50, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
+DefineConstant [meshFactor = {10, Name "Input/2Mesh/2Coarsening factor at infinity (-)"}];
 DefineConstant [LcCyl = meshMult*0.0003]; // Mesh size in cylinder [m]
 DefineConstant [LcLayer = LcCyl]; // Mesh size in the region close to the cylinder [m]
 DefineConstant [LcWire = meshFactor*LcCyl]; // Mesh size in wire [m]
