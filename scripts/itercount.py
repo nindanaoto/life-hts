@@ -20,6 +20,6 @@ with open(sys.argv[1],"r") as f:
             count[-1] = int(data[9:].split(":")[0])
 print(len(count))
 print(max(count))
-print(str(stat.mean(count))+" \pm "+str(stat.stdev(count)))
+print("$"+str(stat.mean(count))+" \pm "+str(stat.stdev(count))+"$(max "+str(max(count))+")")
 print(stat.median(count))
 print(stat.mode(count))

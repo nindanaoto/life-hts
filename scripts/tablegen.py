@@ -59,5 +59,11 @@ for geo in geometry_model:
         print(linestr)
 print("\\bottomrule")
 
-klyrov = {"time":[21437.2,21269.6,21126.3],"step":114}
-print("結果&$"+str(stat.mean(klyrov["time"]))+"\pm"+str(stat.stdev((klyrov["time"])))+"("+str(klyrov["step"])+")$")
+print("反復法")
+# lgmres = {"time":[21437.2,21269.6,21126.3],"step":114,"memory":[123.461,128.453,128.672]}
+lgmres = {"time":[22023,21881.6,21989],"step":102,"memory":[124.672,124.543,122.629]}
+gmres = {"time":[34572.9,34340.2,34927.7],"step":100,"memory":[120.906,124.398,122.395]}
+directmem = [1057.43,965.535,993.309]
+print("GMRES&$"+str(stat.mean(gmres["time"]))+"\pm"+str(stat.stdev((gmres["time"])))+"("+str(gmres["step"])+")$\\\\")
+print("LGMRES&$"+str(stat.mean(lgmres["time"]))+"\pm"+str(stat.stdev((lgmres["time"])))+"("+str(lgmres["step"])+")$\\\\")
+print(str(stat.mean(directmem))+"\pm"+str(stat.stdev(directmem))+"$&$"+str(stat.mean(gmres["memory"]))+"\pm"+str(stat.stdev((gmres["memory"])))+"$&$"+str(stat.mean(lgmres["memory"]))+"\pm"+str(stat.stdev((lgmres["memory"])))+"$")
