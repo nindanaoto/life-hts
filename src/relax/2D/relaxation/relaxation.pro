@@ -1,4 +1,4 @@
-Include "2Dhybrid_data.pro";
+Include "relaxation_data.pro";
 
 Group {
   Air = Region[AIR];
@@ -47,7 +47,7 @@ Function {
       Name "Input/Solver/2Allow adaptive time step increase"},
     dt_max = {0.1 * (1 / Freq), Visible adaptive,
       Name "Input/Solver/2Maximum time step [s]"},
-    tol_abs = {1e-7,
+    tol_abs = {1e-8,
       Name "Input/Solver/3Absolute tolerance on nonlinear residual"},
     tol_rel = {1e-6,
       Name "Input/Solver/3Relative tolerance on nonlinear residual"},
@@ -64,6 +64,7 @@ Function {
   ];
 
   dt_max = adaptive ? dt_max : dt;
+  RelaxFac_Log = LogSpace[0, Log10[2^(-12)],13];
 
   mu[MagnLinDomain] =  mu0;
   rho[Ferrite] = 1 / fesigma;
@@ -75,9 +76,8 @@ Function {
     Ec / Jc * (Norm[$1]/Jc)^(n - 1) * TensorDiag[1, 1, 1] +
     Ec / Jc^3 * (n - 1) * (Norm[$1]/Jc)^(n - 3) * SquDyadicProduct[$1];
   mu[MagnAnhyDomain] = mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) );
-  dbdh[MagnAnhyDomain] = ($iter > 8) ? ((1.0/$relaxFactor) * (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
-    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1])) :
-    (mu0 * ( 1.0 + 1.0 / ( 1/(mur0-1) + Norm[$1]/m0 ) ) * TensorDiag[1, 1, 1]); // Hybrid lin. technique 
+  dbdh[MagnAnhyDomain] = (mu0 * (1.0 + (1.0/(1/(mur0-1)+Norm[$1]/m0))#1 ) * TensorDiag[1, 1, 1]
+    - mu0/m0 * (#1)^2 * 1/(Norm[$1]+epsMu) * SquDyadicProduct[$1]); 
 }
 
 Jacobian {
@@ -171,7 +171,7 @@ Formulation {
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
       Galerkin { [ - mu[{h}[1]] * {h}[1] / $DTime , {h} ];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
-      Galerkin { JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
+      Galerkin {  JacNL[dbdh[{h}] * Dof{h} / $DTime , {h}];
         In MagnAnhyDomain; Integration Int; Jacobian Vol;  }
 
       //Galerkin { [ mu[] * DtHs[] , {h} ];
@@ -200,14 +200,17 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_view -pc_type none -ksp_type gmres -ksp_monitor_singular_value -ksp_gmres_restart 1000"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu"];   
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps"];  
-      SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];  
+      // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mkl_pardiso"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist"];  
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
       // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
-      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -ksp_abstol 1.e-13"];  
+      SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 50 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type lgmres -ksp_gmres_restart 50 -ksp_lgmres_augment 10 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type jacobi -ksp_type bcgsl -ksp_bcgsl_ell 10 -ksp_bcgsl_cxpol -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -pc_mg_cycles v -pc_mg_levels 3 -ksp_type lgmres -ksp_gmres_restart 100 -ksp_rtol 1.e-13 	-ksp_atol 1.e-12 -ksp_max_it 10000"];
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];
 
@@ -231,7 +234,7 @@ Resolution {
       TimeLoopTheta[time0, time1, dt, 1] {
 
         // compute first solution guess and residual at step $TimeStep
-        GenerateJac[A]; SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+        GenerateJac[A]; SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
         GenerateJac[A]; GetResidual[A, $res0]; Evaluate[ $res = $res0, $iter = 0 ];
         Print[{$iter, $res, $res / $res0},
               Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -239,7 +242,7 @@ Resolution {
         // iterate until convergence
         While[$res > tol_abs && $res / $res0 > tol_rel &&
               $res / $res0 <= 1 && $iter < iter_max]{
-          SolveJac[A]; Evaluate[ $syscount = $syscount + 1 ];
+          SolveJac_AdaptRelax[A, List[RelaxFac_Log], 0]; Evaluate[ $syscount = $syscount + 1 ];
           GenerateJac[A]; GetResidual[A, $res]; Evaluate[ $iter = $iter + 1 ];
           Print[{$iter, $res, $res / $res0},
                 Format "Residual %03g: abs %14.12e rel %14.12e"];
@@ -285,6 +288,10 @@ PostProcessing {
       { Name h; Value{ Local{ [ {h} ] ;
 	    In Omega; Jacobian Vol; } } }
       { Name j; Value{ Local{ [ {d h} ] ;
+      In OmegaC; Jacobian Vol; } } }
+      { Name linj; Value{ Local{ [ {d h} ] ;
+      In LinOmegaC; Jacobian Vol; } } }
+      { Name e; Value{ Local{ [ rho[{h},{d h}] * {d h} ] ;
 	    In OmegaC; Jacobian Vol; } } }
       { Name norm_j; Value{ Local{ [ Norm[{d h}] ] ;
 	    In OmegaC; Jacobian Vol; } } }
@@ -310,7 +317,9 @@ PostOperation {
       Echo["General.Verbosity=3;", File "res/option.pos"];
       Print[ h, OnElementsOf Omega , File "res/h.pos", Name "h [Am⁻1]" ];
       Print[ j, OnElementsOf OmegaC , File "res/j.pos", Name "j [Am⁻²]" ];
-      // Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
+      Print[ norm_j, OnElementsOf OmegaC , File "res/norm_j.pos", Name "|j| [Am⁻²]" ];
+      Print[ linj, OnElementsOf LinOmegaC , File "res/linj.pos", Name "linj [Am⁻²]" ];
+      Print[ e, OnElementsOf OmegaC , File "res/e.pos", Name "e [N/C]" ];
       Print[ Losses[OmegaC],  OnGlobal, Format TimeTable,
         File > "res/losses_total.txt", SendToServer "Output/Losses [W]"] ;
       Print[ Losses[Filaments], OnGlobal, Format TimeTable,

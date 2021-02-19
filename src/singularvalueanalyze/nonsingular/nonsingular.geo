@@ -1,6 +1,6 @@
 SetFactory("OpenCASCADE");
 // Include cross data
-Include "2Dhybrid_data.pro";
+Include "nonsingular_data.pro";
 
 // Interactive settings
 //R = W/2; // Radius
@@ -127,5 +127,6 @@ Physical Surface("Cupper", CU) = {cus};
 
 // Physical Line("Super conductor domain outer boundary", BND_FILAMENT) = {17, 18, 19, 20};
 Physical Line("Wire boundary", BND_WIRE) = {wirel0, wirel1, wirel2, wirel3};
+Physical Point("Arbitrary Point", ARBITRARY_POINT) = {infp0};
 
 Cohomology(1){{AIR,INF},{}};

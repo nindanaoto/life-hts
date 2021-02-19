@@ -143,7 +143,7 @@ FunctionSpace {
       { NameOfCoef Voltage1 ;
         EntityType GroupsOfEdgesOf ; NameOfConstraint Voltage ; }
       { NameOfCoef phin ;
-        EntityType GroupsOfEdgesOf ; NameOfConstraint phi ; }
+        EntityType NodesOf ; NameOfConstraint phi ; }
     }
   }
 }
@@ -216,9 +216,11 @@ Resolution {
       // SetGlobalSolverOptions["-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type klu"];  
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_mat_solver_type strumpack -dm_mat_type aijcusparse -dm_vec_type cusp"];
       // SetGlobalSolverOptions["-ksp_type pipecg -pc_type ilu -pc_factor mat_solver_type strumpack"];
-      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];  
-      SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type lgmres -ksp_gmres_restart 50 -ksp_lgmres_augment 10 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
-      // SetGlobalSolverOptions["-pc_type jacobi -ksp_type bcgsl -ksp_bcgsl_ell 10 -ksp_bcgsl_cxpol -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type ilu -ksp_type bcgsl -mat_type aijcusparse -vec_type cuda"];
+      SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type lgmres -ksp_gmres_restart 50 -ksp_lgmres_augment 3 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type gmres -ksp_gmres_restart 200 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -ksp_type dgmres -ksp_gmres_restart 30 -ksp_rtol 1.e-13 -ksp_atol 1.e-12 -ksp_max_it 10000"];
+      // SetGlobalSolverOptions["-pc_type jacobi -ksp_type bcgsl -ksp_bcgsl_ell 10 -ksp_bcgsl_cxpol -ksp_rtol 1.e-13 -ksp_atol 1.e-7 -ksp_max_it 10000"];
       // SetGlobalSolverOptions["-pc_type gamg -pc_gamg_type agg -pc_mg_cycles v -pc_mg_levels 3 -ksp_type lgmres -ksp_gmres_restart 100 -ksp_rtol 1.e-13 	-ksp_atol 1.e-12 -ksp_max_it 10000"];
       // SetGlobalSolverOptions["-pc_type hmg -ksp_type fgmres -ksp_rtol 1.e-12"];
       // SetGlobalSolverOptions["-ksp_type bcgsl -pc_type ilu -pc_factor_pivot_in_blocks -pc_factor_nonzeros_along_diagonal "];

@@ -20,7 +20,8 @@ DefineConstant [meshMult = {0.03, Name "Input/2Mesh/1Mesh size multiplier (-)"}]
 // ---- Constant definition for regions ----
 AIR = 1000;
 INF = 2000;
-MATRIX = 3000;
+MATRIX = 3000; 
+ARBITRARY_POINT = 11000;
 FILAMENT0 = 23000;
 FILAMENT1 = 23001;
 FILAMENT2 = 23002;

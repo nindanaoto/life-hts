@@ -1,3 +1,17 @@
+This repository contains numerical experiments codes for my gradutaion thesis and initialy based on [life-hts](https://gitlab.onelab.info/life-hts/life-hts).
+I also referenced [the example model of GetDP](https://gitlab.onelab.info/doc/models/-/tree/master/Superconductors).
+
+This is example to run my codes.
+
+```
+gmsh relaxation.geo -2
+getdp cylinder -solve MagDynHTime
+getdp cylinder -pos MagDynH
+gmsh res/j.pos
+```
+
+Below one is original README from [life-hts](https://gitlab.onelab.info/life-hts/life-hts) for a reference purpose.
+
 # Life-HTS
 Liège university Finite Element models for High-Temperature Superconductors - 2019
 
