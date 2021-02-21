@@ -19,7 +19,7 @@ cd lib
 cmake -DDEFAULT=0 -DENABLE_PARSER=1 -DENABLE_POST=1 -DENABLE_ANN=1 -DENABLE_BLAS_LAPACK=1 -DENABLE_BUILD_LIB=1 -DENABLE_PRIVATE_API=1 ..
 make lib
 sudo make install/fast
-cd ../../petsc-3.14.0
+cd ../../petsc-3.14.2
 export PETSC_DIR=$PWD
 export PETSC_ARCH=real_mumps_seq
 ./configure --with-clanguage=cxx --with-debugging=0 --with-openmp=1 --with-mpi=1 --with-mpiuni-fortran-binding=0 --download-superlu_dist=yes --download-mumps=yes --download-hypre=yes --download-scalapack=yes --with-shared-libraries=0 --with-x=0 --with-ssl=0 --with-scalar-type=real -COPTFLAGS="-O3" -CXXOPTFLAGS="-O3" -FOPTFLAGS="-O3" 
