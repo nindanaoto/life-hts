@@ -5,9 +5,17 @@ This is example to run my codes.
 
 ```
 gmsh relaxation.geo -2
-getdp cylinder -solve MagDynHTime
-getdp cylinder -pos MagDynH
+getdp relaxation.pro -solve MagDynHTime
+getdp relaxation.pro -pos MagDynH
 gmsh res/j.pos
+```
+
+I also wrote the Dockerfile as a example. To run this, type and run following commands. If you want to visualize the result, open the file under src/relax/2D/relaxation/res by Gmsh on Host.
+Tested on Ubuntu 20.10.
+
+```
+sudo docker build -t life-hts .
+sudo docker run -it --rm  -v $PWD/src/relax/2D/relaxation:/onelab-Linux64/src life-hts
 ```
 
 Below one is original README from [life-hts](https://gitlab.onelab.info/life-hts/life-hts) for a reference purpose.
